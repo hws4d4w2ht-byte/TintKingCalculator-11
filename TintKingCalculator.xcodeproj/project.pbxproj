@@ -1,0 +1,496 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1 /* TintKingCalculatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1 /* TintKingCalculatorApp.swift */; };
+		A2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2 /* ContentView.swift */; };
+		A3 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
+		A4 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
+		A5 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
+		A6 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
+		A7 /* SharedQuoteLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8 /* SharedQuoteLogic.swift */; };
+		A8 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9 /* CloudSync.swift */; };
+		A9 /* DechromePresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10 /* DechromePresetStore.swift */; };
+		A10 /* CutFoilSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11 /* CutFoilSettingsView.swift */; };
+		A11 /* PriceListImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12 /* PriceListImportExport.swift */; };
+		A12 /* AppNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13 /* AppNumberField.swift */; };
+		A13 /* MeasurementModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14 /* MeasurementModel.swift */; };
+		A14 /* MeasurementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15 /* MeasurementStore.swift */; };
+		A15 /* MeasureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16 /* MeasureView.swift */; };
+		A16 /* MoneybirdExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17 /* MoneybirdExportService.swift */; };
+		A17 /* ProductStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18 /* ProductStore.swift */; };
+		A18 /* ProductImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19 /* ProductImportExport.swift */; };
+		A19 /* ProductListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20 /* ProductListView.swift */; };
+		AI1 /* TintKingCalculatorApp_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI1 /* TintKingCalculatorApp_iOS.swift */; };
+		AI10 /* SharedQuoteLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8 /* SharedQuoteLogic.swift */; };
+		AI11 /* MobileMontageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI7 /* MobileMontageView.swift */; };
+		AI12 /* MobileRollCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI8 /* MobileRollCalculatorView.swift */; };
+		AI13 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9 /* CloudSync.swift */; };
+		AI14 /* DechromePresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10 /* DechromePresetStore.swift */; };
+		AI15 /* MobileSnijfolieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI9 /* MobileSnijfolieView.swift */; };
+		AI16 /* CutFoilSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11 /* CutFoilSettingsView.swift */; };
+		AI17 /* PriceListImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12 /* PriceListImportExport.swift */; };
+		AI18 /* AppNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13 /* AppNumberField.swift */; };
+		AI19 /* MeasurementModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14 /* MeasurementModel.swift */; };
+		AI20 /* MeasurementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15 /* MeasurementStore.swift */; };
+		AI21 /* MeasureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16 /* MeasureView.swift */; };
+		AI22 /* MoneybirdExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17 /* MoneybirdExportService.swift */; };
+		AI23 /* ProductStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18 /* ProductStore.swift */; };
+		AI24 /* ProductImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19 /* ProductImportExport.swift */; };
+		AI25 /* ProductListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20 /* ProductListView.swift */; };
+		AI2 /* MobileContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI2 /* MobileContentView.swift */; };
+		AI3 /* MobileTintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI3 /* MobileTintView.swift */; };
+		AI4 /* MobileDechromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI4 /* MobileDechromeView.swift */; };
+		AI5 /* MobileRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI5 /* MobileRequestView.swift */; };
+		AI6 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
+		AI7 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
+		AI8 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
+		AI9 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B1 /* TintKingCalculatorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TintKingCalculatorApp.swift; sourceTree = "<group>"; };
+		B10 /* DechromePresetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DechromePresetStore.swift; sourceTree = "<group>"; };
+		B11 /* CutFoilSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutFoilSettingsView.swift; sourceTree = "<group>"; };
+		B12 /* PriceListImportExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListImportExport.swift; sourceTree = "<group>"; };
+		B13 /* AppNumberField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNumberField.swift; sourceTree = "<group>"; };
+		B14 /* MeasurementModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurementModel.swift; sourceTree = "<group>"; };
+		B15 /* MeasurementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurementStore.swift; sourceTree = "<group>"; };
+		B16 /* MeasureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureView.swift; sourceTree = "<group>"; };
+		B17 /* MoneybirdExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneybirdExportService.swift; sourceTree = "<group>"; };
+		B18 /* ProductStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductStore.swift; sourceTree = "<group>"; };
+		B19 /* ProductImportExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductImportExport.swift; sourceTree = "<group>"; };
+		B20 /* ProductListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListView.swift; sourceTree = "<group>"; };
+		B2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B3 /* CalculatorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorModel.swift; sourceTree = "<group>"; };
+		B4 /* TintKingCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TintKingCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5 /* ProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStore.swift; sourceTree = "<group>"; };
+		B6 /* PriceListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListStore.swift; sourceTree = "<group>"; };
+		B7 /* PriceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListView.swift; sourceTree = "<group>"; };
+		B8 /* SharedQuoteLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedQuoteLogic.swift; sourceTree = "<group>"; };
+		B9 /* CloudSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSync.swift; sourceTree = "<group>"; };
+		BI1 /* TintKingCalculatorApp_iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TintKingCalculatorApp_iOS.swift; sourceTree = "<group>"; };
+		BI2 /* MobileContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileContentView.swift; sourceTree = "<group>"; };
+		BI3 /* MobileTintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileTintView.swift; sourceTree = "<group>"; };
+		BI4 /* MobileDechromeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDechromeView.swift; sourceTree = "<group>"; };
+		BI5 /* MobileRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRequestView.swift; sourceTree = "<group>"; };
+		BI6 /* TintKingCalculatorMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TintKingCalculatorMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BI7 /* MobileMontageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileMontageView.swift; sourceTree = "<group>"; };
+		BI8 /* MobileRollCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileRollCalculatorView.swift; sourceTree = "<group>"; };
+		BI9 /* MobileSnijfolieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSnijfolieView.swift; sourceTree = "<group>"; };
+		E2 /* TintKingCalculator.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TintKingCalculator.entitlements; sourceTree = "<group>"; };
+		E3 /* TintKingCalculatorMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TintKingCalculatorMobile.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CI1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D1 = {
+			isa = PBXGroup;
+			children = (
+				D2 /* TintKingCalculator */,
+				DI1 /* TintKingCalculatorMobile */,
+				D3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D2 /* TintKingCalculator */ = {
+			isa = PBXGroup;
+			children = (
+				B1 /* TintKingCalculatorApp.swift */,
+				B2 /* ContentView.swift */,
+				B3 /* CalculatorModel.swift */,
+				B5 /* ProjectStore.swift */,
+				B6 /* PriceListStore.swift */,
+				B7 /* PriceListView.swift */,
+				B8 /* SharedQuoteLogic.swift */,
+				B11 /* CutFoilSettingsView.swift */,
+				B12 /* PriceListImportExport.swift */,
+				B13 /* AppNumberField.swift */,
+				B14 /* MeasurementModel.swift */,
+				B15 /* MeasurementStore.swift */,
+				B16 /* MeasureView.swift */,
+				B17 /* MoneybirdExportService.swift */,
+				B18 /* ProductStore.swift */,
+				B19 /* ProductImportExport.swift */,
+				B20 /* ProductListView.swift */,
+				B9 /* CloudSync.swift */,
+				B10 /* DechromePresetStore.swift */,
+				E2 /* TintKingCalculator.entitlements */,
+			);
+			path = TintKingCalculator;
+			sourceTree = "<group>";
+		};
+		D3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B4 /* TintKingCalculator.app */,
+				BI6 /* TintKingCalculatorMobile.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DI1 /* TintKingCalculatorMobile */ = {
+			isa = PBXGroup;
+			children = (
+				BI1 /* TintKingCalculatorApp_iOS.swift */,
+				BI2 /* MobileContentView.swift */,
+				BI3 /* MobileTintView.swift */,
+				BI4 /* MobileDechromeView.swift */,
+				BI5 /* MobileRequestView.swift */,
+				BI7 /* MobileMontageView.swift */,
+				BI8 /* MobileRollCalculatorView.swift */,
+				BI9 /* MobileSnijfolieView.swift */,
+				E3 /* TintKingCalculatorMobile.entitlements */,
+			);
+			path = TintKingCalculatorMobile;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E1 /* TintKingCalculator */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = J2 /* Build configuration list for PBXNativeTarget "TintKingCalculator" */;
+			buildPhases = (
+				G1 /* Sources */,
+				C1 /* Frameworks */,
+				H1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TintKingCalculator;
+			productName = TintKingCalculator;
+			productReference = B4 /* TintKingCalculator.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EI1 /* TintKingCalculatorMobile */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = JI1 /* Build configuration list for PBXNativeTarget "TintKingCalculatorMobile" */;
+			buildPhases = (
+				GI1 /* Sources */,
+				CI1 /* Frameworks */,
+				HI1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TintKingCalculatorMobile;
+			productName = TintKingCalculatorMobile;
+			productReference = BI6 /* TintKingCalculatorMobile.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					E1 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					EI1 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = J1 /* Build configuration list for PBXProject "TintKingCalculator" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D1;
+			productRefGroup = D3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E1 /* TintKingCalculator */,
+				EI1 /* TintKingCalculatorMobile */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		H1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		HI1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		G1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1 /* TintKingCalculatorApp.swift in Sources */,
+				A2 /* ContentView.swift in Sources */,
+				A3 /* CalculatorModel.swift in Sources */,
+				A4 /* ProjectStore.swift in Sources */,
+				A5 /* PriceListStore.swift in Sources */,
+				A6 /* PriceListView.swift in Sources */,
+				A7 /* SharedQuoteLogic.swift in Sources */,
+				A8 /* CloudSync.swift in Sources */,
+				A9 /* DechromePresetStore.swift in Sources */,
+				A10 /* CutFoilSettingsView.swift in Sources */,
+				A11 /* PriceListImportExport.swift in Sources */,
+				A12 /* AppNumberField.swift in Sources */,
+				A13 /* MeasurementModel.swift in Sources */,
+				A14 /* MeasurementStore.swift in Sources */,
+				A15 /* MeasureView.swift in Sources */,
+				A16 /* MoneybirdExportService.swift in Sources */,
+				A17 /* ProductStore.swift in Sources */,
+				A18 /* ProductImportExport.swift in Sources */,
+				A19 /* ProductListView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		GI1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AI1 /* TintKingCalculatorApp_iOS.swift in Sources */,
+				AI2 /* MobileContentView.swift in Sources */,
+				AI3 /* MobileTintView.swift in Sources */,
+				AI4 /* MobileDechromeView.swift in Sources */,
+				AI5 /* MobileRequestView.swift in Sources */,
+				AI6 /* CalculatorModel.swift in Sources */,
+				AI7 /* ProjectStore.swift in Sources */,
+				AI8 /* PriceListStore.swift in Sources */,
+				AI9 /* PriceListView.swift in Sources */,
+				AI10 /* SharedQuoteLogic.swift in Sources */,
+				AI11 /* MobileMontageView.swift in Sources */,
+				AI12 /* MobileRollCalculatorView.swift in Sources */,
+				AI13 /* CloudSync.swift in Sources */,
+				AI14 /* DechromePresetStore.swift in Sources */,
+				AI15 /* MobileSnijfolieView.swift in Sources */,
+				AI16 /* CutFoilSettingsView.swift in Sources */,
+				AI17 /* PriceListImportExport.swift in Sources */,
+				AI18 /* AppNumberField.swift in Sources */,
+				AI19 /* MeasurementModel.swift in Sources */,
+				AI20 /* MeasurementStore.swift in Sources */,
+				AI21 /* MeasureView.swift in Sources */,
+				AI22 /* MoneybirdExportService.swift in Sources */,
+				AI23 /* ProductStore.swift in Sources */,
+				AI24 /* ProductImportExport.swift in Sources */,
+				AI25 /* ProductListView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		I1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		I2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		I3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TintKingCalculator/TintKingCalculator.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = V9C8TTX3QR;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Calculator";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.tintking.calculator;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		I4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TintKingCalculator/TintKingCalculator.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = V9C8TTX3QR;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Calculator";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 2.1;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.tintking.calculator;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		II1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TintKingCalculatorMobile/TintKingCalculatorMobile.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = V9C8TTX3QR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Mobiel";
+				INFOPLIST_KEY_NSCameraUsageDescription = "TintKing gebruikt de camera om foto's te maken voor het meten-tabblad.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.tintking.calculator.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		II2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TintKingCalculatorMobile/TintKingCalculatorMobile.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = V9C8TTX3QR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Mobiel";
+				INFOPLIST_KEY_NSCameraUsageDescription = "TintKing gebruikt de camera om foto's te maken voor het meten-tabblad.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.tintking.calculator.mobile;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		J1 /* Build configuration list for PBXProject "TintKingCalculator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I1 /* Debug */,
+				I2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		J2 /* Build configuration list for PBXNativeTarget "TintKingCalculator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I3 /* Debug */,
+				I4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		JI1 /* Build configuration list for PBXNativeTarget "TintKingCalculatorMobile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				II1 /* Debug */,
+				II2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F1 /* Project object */;
+}
