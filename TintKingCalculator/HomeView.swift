@@ -17,6 +17,8 @@ struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var selectedCustomerID: UUID?
     @ObservedObject var reminderStore: ReminderStore
+    @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
+    @ObservedObject var overdueInvoicesStore: OverdueInvoicesStore
 
     private let quickLinks: [AppTab] = [
         .aanvraag, .montage, .tint, .dechrome, .snijfolie, .roll, .meten, .producten, .prijslijst, .klanten, .kozijn,
@@ -31,6 +33,8 @@ struct HomeView: View {
 
     var body: some View {
         List {
+            overdueInvoicesSection
+
             Section("Snel naar") {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
@@ -96,6 +100,62 @@ struct HomeView: View {
         #endif
         .onAppear {
             reminderStore.start()
+        }
+        .task {
+            await overdueInvoicesStore.refresh(settings: moneybirdSettings)
+        }
+    }
+
+    private var currency: FloatingPointFormatStyle<Double>.Currency {
+        .currency(code: "EUR").locale(Locale(identifier: "nl_NL"))
+    }
+
+    /// Compact kaartje: alleen zichtbaar als Moneybird is ingesteld én er
+    /// daadwerkelijk te laat betaalde facturen zijn — anders geen extra
+    /// rommel op het beginscherm. Tikken op een factuur opent 'm in Moneybird.
+    @ViewBuilder
+    private var overdueInvoicesSection: some View {
+        if !overdueInvoicesStore.invoices.isEmpty {
+            Section {
+                ForEach(overdueInvoicesStore.invoices.prefix(3)) { invoice in
+                    Button {
+                        if let url = invoice.viewURL {
+                            #if os(macOS)
+                            NSWorkspace.shared.open(url)
+                            #else
+                            UIApplication.shared.open(url)
+                            #endif
+                        }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(invoice.contactName)
+                                    .foregroundStyle(.primary)
+                                Text("\(invoice.daysOverdue) \(invoice.daysOverdue == 1 ? "dag" : "dagen") te laat")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                            }
+                            Spacer()
+                            Text(invoice.totalPriceIncl, format: currency)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                if overdueInvoicesStore.invoices.count > 3 {
+                    Text("+ \(overdueInvoicesStore.invoices.count - 3) meer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                HStack {
+                    Label("Te laat betaalde facturen", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                    Spacer()
+                    Text(overdueInvoicesStore.totalOverdueAmount, format: currency)
+                        .font(.caption.weight(.semibold))
+                }
+            }
         }
     }
 

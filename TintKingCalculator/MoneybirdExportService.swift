@@ -129,6 +129,19 @@ struct MoneybirdInvoiceResult {
     let viewURL: URL?
 }
 
+/// Eén verkoopfactuur die volgens Moneybird te laat betaald is (status "late"),
+/// voor het overzichtskaartje op het beginscherm.
+struct MoneybirdOverdueInvoice: Identifiable, Hashable {
+    let id: String
+    let contactName: String
+    let invoiceNumber: String
+    let totalPriceIncl: Double
+    let dueDate: Date?
+    /// Aantal dagen te laat (0 als de vervaldatum onbekend is).
+    let daysOverdue: Int
+    let viewURL: URL?
+}
+
 /// Stuurt een concept-offerte of -factuur (alleen omschrijving + bedrag per
 /// regel) naar Moneybird, gekoppeld aan de vaste placeholder-klant.
 /// Btw-tarief en grootboekrekening laten we bewust leeg: Moneybird vult daar
@@ -311,6 +324,101 @@ enum MoneybirdExportService {
 
             return MoneybirdContactLink(id: id, name: name, email: email, phone: phone, address: address)
         }
+    }
+
+    /// Haalt alle verkoopfacturen op die Moneybird als te laat ("late") markeert
+    /// — voor het kaartje op het beginscherm. Nieuwste vervaldatum het langst
+    /// geleden eerst (dus de meest urgente bovenaan).
+    @MainActor
+    static func fetchOverdueInvoices(settings: MoneybirdSettingsStore) async throws -> [MoneybirdOverdueInvoice] {
+        guard settings.isConfigured else {
+            throw MoneybirdExportError.notConfigured
+        }
+        guard var components = URLComponents(string: "https://moneybird.com/api/v2/\(settings.administrationId)/sales_invoices.json") else {
+            throw MoneybirdExportError.invalidResponse
+        }
+        components.queryItems = [
+            URLQueryItem(name: "filter", value: "state:late"),
+            URLQueryItem(name: "per_page", value: "100")
+        ]
+        guard let url = components.url else {
+            throw MoneybirdExportError.invalidResponse
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(settings.apiToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw MoneybirdExportError.network(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw MoneybirdExportError.invalidResponse
+        }
+        if httpResponse.statusCode == 401 {
+            throw MoneybirdExportError.unauthorized
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = String(data: data, encoding: .utf8) ?? "onbekende fout"
+            throw MoneybirdExportError.server(httpResponse.statusCode, message)
+        }
+
+        guard let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            throw MoneybirdExportError.invalidResponse
+        }
+
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+        let today = Calendar.current.startOfDay(for: Date())
+
+        let invoices: [MoneybirdOverdueInvoice] = array.compactMap { dict in
+            let id: String
+            if let stringId = dict["id"] as? String {
+                id = stringId
+            } else if let numberId = dict["id"] as? NSNumber {
+                id = numberId.stringValue
+            } else {
+                return nil
+            }
+
+            let contact = dict["contact"] as? [String: Any]
+            let company = (contact?["company_name"] as? String) ?? ""
+            let firstname = (contact?["firstname"] as? String) ?? ""
+            let lastname = (contact?["lastname"] as? String) ?? ""
+            let personName = [firstname, lastname].filter { !$0.isEmpty }.joined(separator: " ")
+            let contactName = !company.trimmingCharacters(in: .whitespaces).isEmpty ? company : (personName.isEmpty ? "Onbekende klant" : personName)
+
+            let invoiceNumber = (dict["invoice_id"] as? String) ?? ""
+
+            let totalPriceIncl: Double
+            if let totalString = dict["total_price_incl_tax"] as? String {
+                totalPriceIncl = Double(totalString) ?? 0
+            } else if let totalNumber = dict["total_price_incl_tax"] as? NSNumber {
+                totalPriceIncl = totalNumber.doubleValue
+            } else {
+                totalPriceIncl = 0
+            }
+
+            let dueDate = (dict["due_date"] as? String).flatMap(dateFormatter.date(from:))
+            let daysOverdue: Int
+            if let dueDate {
+                let dueDay = Calendar.current.startOfDay(for: dueDate)
+                daysOverdue = max(0, Calendar.current.dateComponents([.day], from: dueDay, to: today).day ?? 0)
+            } else {
+                daysOverdue = 0
+            }
+
+            let viewURL = URL(string: "https://moneybird.com/\(settings.administrationId)/sales_invoices/\(id)")
+
+            return MoneybirdOverdueInvoice(id: id, contactName: contactName, invoiceNumber: invoiceNumber, totalPriceIncl: totalPriceIncl, dueDate: dueDate, daysOverdue: daysOverdue, viewURL: viewURL)
+        }
+
+        return invoices.sorted { $0.daysOverdue > $1.daysOverdue }
     }
 
     /// Lichte test: haalt de administraties op die bij dit token horen. Geeft
