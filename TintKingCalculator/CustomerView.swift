@@ -18,7 +18,7 @@ struct CustomerView: View {
     @ObservedObject var projectStore: ProjectStore
     @ObservedObject var quoteArchiveStore: QuoteArchiveStore
     @Binding var selectedCustomerID: UUID?
-    @Binding var selectedTab: AppTab
+    @Binding var appTabSelection: AppTab
     @Binding var selectedMontageProjectID: UUID?
 
     @State private var searchText = ""
@@ -108,7 +108,7 @@ struct CustomerView: View {
             }
         } detail: {
             if let selectedCustomerID {
-                CustomerDetailView(store: store, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, customerID: selectedCustomerID, selection: $selectedCustomerID, selectedTab: $selectedTab, selectedMontageProjectID: $selectedMontageProjectID)
+                CustomerDetailView(store: store, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, customerID: selectedCustomerID, selection: $selectedCustomerID, appTabSelection: $appTabSelection, selectedMontageProjectID: $selectedMontageProjectID)
                     .id(selectedCustomerID)
             } else {
                 VStack(spacing: 8) {
@@ -166,7 +166,7 @@ private struct CustomerDetailView: View {
     @ObservedObject var quoteArchiveStore: QuoteArchiveStore
     let customerID: UUID
     @Binding var selection: UUID?
-    @Binding var selectedTab: AppTab
+    @Binding var appTabSelection: AppTab
     @Binding var selectedMontageProjectID: UUID?
 
     @State private var name: String = ""
@@ -392,7 +392,7 @@ private struct CustomerDetailView: View {
                             let result = calculate(input: project.input, settings: project.settings)
                             Button {
                                 selectedMontageProjectID = project.id
-                                selectedTab = .montage
+                                appTabSelection = .montage
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {

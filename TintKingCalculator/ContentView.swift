@@ -162,7 +162,7 @@ struct ContentView: View {
         case .prijslijst:
             PriceListView(store: priceListStore)
         case .klanten:
-            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, selectedCustomerID: $selectedCustomerID, selectedTab: $selectedTab, selectedMontageProjectID: $selectedMontageProjectID)
+            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, selectedCustomerID: $selectedCustomerID, appTabSelection: $selectedTab, selectedMontageProjectID: $selectedMontageProjectID)
         case .bestellijst:
             SupplyView(store: supplyStore, orderListStore: orderListStore)
         case .kozijn:
