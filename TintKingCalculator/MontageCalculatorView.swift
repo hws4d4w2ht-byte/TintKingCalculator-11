@@ -121,8 +121,14 @@ struct MontageCalculatorView: View {
                 settings = project.settings
             }
             .onChange(of: selectedMontageProjectID) { _, newValue in
-                guard let newValue else { return }
+                // Rechtstreeks input/settings overnemen i.p.v. alleen
+                // selectedProjectID te zetten en te wachten tot de andere
+                // onChange hierboven dat oppikt — dat gaf in de praktijk een
+                // tabwissel zonder dat het project ook echt geladen werd.
+                guard let newValue, let project = store.project(id: newValue) else { return }
                 selectedProjectID = newValue
+                input = project.input
+                settings = project.settings
                 selectedMontageProjectID = nil
             }
             .onAppear {

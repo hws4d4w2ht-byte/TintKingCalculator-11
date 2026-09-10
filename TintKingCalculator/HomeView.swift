@@ -187,15 +187,13 @@ struct HomeView: View {
     /// maximaal een jaar oud meestal al kort.
     @ViewBuilder
     private var overdueInvoicesRows: some View {
+        Text("Tik op een factuur om deze te openen in Moneybird en actie te ondernemen.")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+
         ForEach(overdueInvoicesStore.invoices.prefix(5)) { invoice in
             Button {
-                if let url = invoice.viewURL {
-                    #if os(macOS)
-                    NSWorkspace.shared.open(url)
-                    #else
-                    UIApplication.shared.open(url)
-                    #endif
-                }
+                openInMoneybird(invoice)
             } label: {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -208,9 +206,13 @@ struct HomeView: View {
                     Spacer()
                     Text(invoice.totalPriceIncl, format: currency)
                         .foregroundStyle(.secondary)
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(invoice.viewURL == nil ? Color.secondary.opacity(0.3) : Color.accentColor)
+                        .help("Open in Moneybird")
                 }
             }
             .buttonStyle(.plain)
+            .disabled(invoice.viewURL == nil)
         }
         if overdueInvoicesStore.invoices.count > 5 {
             Text("+ \(overdueInvoicesStore.invoices.count - 5) meer")
@@ -293,6 +295,15 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    private func openInMoneybird(_ invoice: MoneybirdOverdueInvoice) {
+        guard let url = invoice.viewURL else { return }
+        #if os(macOS)
+        NSWorkspace.shared.open(url)
+        #else
+        UIApplication.shared.open(url)
+        #endif
     }
 
     private func openReminderSettings() {
