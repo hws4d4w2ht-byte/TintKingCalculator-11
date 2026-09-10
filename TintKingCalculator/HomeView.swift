@@ -315,8 +315,24 @@ struct HomeView: View {
 private struct HomeCard<Trailing: View, Content: View>: View {
     let title: String
     var titleColor: Color = .primary
-    @ViewBuilder var trailing: () -> Trailing = { EmptyView() }
-    @ViewBuilder var content: () -> Content
+    let trailing: () -> Trailing
+    let content: () -> Content
+
+    // @ViewBuilder hoort hier op de init-parameters, niet op de
+    // properties zelf (een result builder-attribuut werkt alleen op een
+    // functieparameter of een computed property met getter) — vandaar deze
+    // expliciete init in plaats van de automatische memberwise-init.
+    init(
+        title: String,
+        titleColor: Color = .primary,
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() },
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.titleColor = titleColor
+        self.trailing = trailing
+        self.content = content
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
