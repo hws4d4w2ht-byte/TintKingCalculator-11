@@ -120,12 +120,15 @@ struct MontageCalculatorView: View {
                 input = project.input
                 settings = project.settings
             }
-            .onChange(of: selectedMontageProjectID) { _, newValue in
-                // Rechtstreeks input/settings overnemen i.p.v. alleen
-                // selectedProjectID te zetten en te wachten tot de andere
-                // onChange hierboven dat oppikt — dat gaf in de praktijk een
-                // tabwissel zonder dat het project ook echt geladen werd.
-                guard let newValue, let project = store.project(id: newValue) else { return }
+            // .task(id:) i.p.v. .onChange: .onChange vuurt NIET als de
+            // binding al bij het ontstaan van deze view de nieuwe waarde
+            // bevat (bijv. als Klanten dit tabblad activeert en het project-ID
+            // in dezelfde actie zet) — dan is er voor onChange geen
+            // 'verandering' te zien en blijft het formulier leeg. .task(id:)
+            // draait wél altijd meteen bij het verschijnen mét de huidige
+            // waarde, en ook opnieuw bij elke latere wijziging.
+            .task(id: selectedMontageProjectID) {
+                guard let newValue = selectedMontageProjectID, let project = store.project(id: newValue) else { return }
                 selectedProjectID = newValue
                 input = project.input
                 settings = project.settings
