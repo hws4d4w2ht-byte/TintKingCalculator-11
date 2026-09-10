@@ -2,9 +2,12 @@ import SwiftUI
 import AppKit
 
 struct MontageCalculatorView: View {
-    @StateObject private var store = ProjectStore()
+    @ObservedObject var store: ProjectStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var customerStore: CustomerStore
+    /// Extern verzoek (bijv. vanuit Klanten → Geschiedenis) om een specifiek
+    /// project te openen — wordt na het overnemen meteen weer op nil gezet.
+    @Binding var selectedMontageProjectID: UUID?
     @State private var input = CalculationInput()
     @State private var settings = CalculatorSettings()
     @State private var selectedProjectID: UUID?
@@ -116,6 +119,11 @@ struct MontageCalculatorView: View {
                 guard let project = store.project(id: newValue) else { return }
                 input = project.input
                 settings = project.settings
+            }
+            .onChange(of: selectedMontageProjectID) { _, newValue in
+                guard let newValue else { return }
+                selectedProjectID = newValue
+                selectedMontageProjectID = nil
             }
             .onAppear {
                 // Haalt bij het openen van dit scherm eerst de laatste stand op —

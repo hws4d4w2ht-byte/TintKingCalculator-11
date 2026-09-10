@@ -5,6 +5,7 @@ struct CombinedRequestView: View {
     @ObservedObject var store: RequestStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var customerStore: CustomerStore
+    @ObservedObject var quoteArchiveStore: QuoteArchiveStore
     @State private var discountMode: DiscountMode = .none
     @State private var discountPercentage: Double = 0
     @State private var discountFixedAmount: Double = 0
@@ -39,6 +40,14 @@ struct CombinedRequestView: View {
     private var linkedContactId: String? { linkedCustomer?.moneybirdContact?.id }
 
     private var exportTargetName: String { linkedCustomer?.moneybirdContact?.name ?? "App klant" }
+
+    /// Legt de huidige aanvraag vast in het klantarchief (zie "Geschiedenis"
+    /// bij Klanten) — alleen zinvol als er een klant gekoppeld is, anders is
+    /// er niets om de geschiedenis aan te koppelen.
+    private func archiveQuote(channel: String) {
+        guard let customer = linkedCustomer else { return }
+        quoteArchiveStore.add(customerID: customer.id, channel: channel, summary: combinedQuoteText(), total: finalIncludingVAT)
+    }
 
     private var requestDiscount: Double {
         discountValue(total: store.total, mode: discountMode, percentage: discountPercentage, fixedAmount: discountFixedAmount)
@@ -132,6 +141,7 @@ struct CombinedRequestView: View {
                     tab: .aanvraag,
                     customerID: linkedCustomer?.id
                 )
+                archiveQuote(channel: asInvoice ? "Moneybird factuur" : "Moneybird offerte")
             } catch {
                 moneybirdResultMessage = error.localizedDescription
                 moneybirdExportSucceeded = false
@@ -538,6 +548,7 @@ struct CombinedRequestView: View {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(whatsAppCombinedText, forType: .string)
                         }
+                        archiveQuote(channel: "WhatsApp")
                     } label: {
                         Label(linkedCustomer?.whatsAppPhone != nil ? "WhatsApp naar \(linkedCustomer?.name ?? "")" : "Kopieer voor WhatsApp", systemImage: "message.fill")
                     }
@@ -546,6 +557,7 @@ struct CombinedRequestView: View {
                     Button {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(emailCombinedText, forType: .string)
+                        archiveQuote(channel: "E-mail")
                     } label: {
                         Label("Kopieer voor e-mail", systemImage: "envelope.fill")
                     }

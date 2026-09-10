@@ -248,10 +248,13 @@ struct MobileContentView: View {
     @StateObject private var customerStore = CustomerStore()
     @StateObject private var supplyStore = SupplyStore()
     @StateObject private var orderListStore = OrderListStore()
+    @StateObject private var projectStore = ProjectStore()
+    @StateObject private var quoteArchiveStore = QuoteArchiveStore()
     @StateObject private var reminderStore = ReminderStore()
     @ObservedObject private var activityLog = ActivityLogStore.shared
     @State private var selectedTab: AppTab = .home
     @State private var selectedCustomerID: UUID?
+    @State private var selectedMontageProjectID: UUID?
     @StateObject private var tabOrderStore = TabOrderStore()
 
     var body: some View {
@@ -289,7 +292,10 @@ struct MobileContentView: View {
             }
         case .montage:
             NavigationStack {
-                MobileMontageView(moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+                MobileMontageView(store: projectStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+                    .navigationDestination(item: $selectedMontageProjectID) { projectID in
+                        MobileMontageEditorView(store: projectStore, projectID: projectID, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+                    }
             }
         case .tint:
             NavigationStack {
@@ -305,7 +311,7 @@ struct MobileContentView: View {
             }
         case .aanvraag:
             NavigationStack {
-                MobileRequestView(store: requestStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+                MobileRequestView(store: requestStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore, quoteArchiveStore: quoteArchiveStore)
             }
         case .roll:
             NavigationStack {
@@ -324,7 +330,7 @@ struct MobileContentView: View {
                 PriceListView(store: priceListStore)
             }
         case .klanten:
-            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $selectedCustomerID)
+            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, selectedCustomerID: $selectedCustomerID, selectedTab: $selectedTab, selectedMontageProjectID: $selectedMontageProjectID)
         case .bestellijst:
             NavigationStack {
                 SupplyView(store: supplyStore, orderListStore: orderListStore)

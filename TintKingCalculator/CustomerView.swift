@@ -14,7 +14,12 @@ import UIKit
 struct CustomerView: View {
     @ObservedObject var store: CustomerStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
+    @ObservedObject var orderListStore: OrderListStore
+    @ObservedObject var projectStore: ProjectStore
+    @ObservedObject var quoteArchiveStore: QuoteArchiveStore
     @Binding var selectedCustomerID: UUID?
+    @Binding var selectedTab: AppTab
+    @Binding var selectedMontageProjectID: UUID?
 
     @State private var searchText = ""
     @State private var showDuplicateConfirm = false
@@ -103,7 +108,7 @@ struct CustomerView: View {
             }
         } detail: {
             if let selectedCustomerID {
-                CustomerDetailView(store: store, moneybirdSettings: moneybirdSettings, customerID: selectedCustomerID, selection: $selectedCustomerID)
+                CustomerDetailView(store: store, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, customerID: selectedCustomerID, selection: $selectedCustomerID, selectedTab: $selectedTab, selectedMontageProjectID: $selectedMontageProjectID)
                     .id(selectedCustomerID)
             } else {
                 VStack(spacing: 8) {
@@ -150,13 +155,19 @@ private struct CustomerRow: View {
 private enum CustomerDetailTab: String, CaseIterable, Hashable {
     case folie = "Folie / materiaal"
     case notities = "Notities & foto's"
+    case geschiedenis = "Geschiedenis"
 }
 
 private struct CustomerDetailView: View {
     @ObservedObject var store: CustomerStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
+    @ObservedObject var orderListStore: OrderListStore
+    @ObservedObject var projectStore: ProjectStore
+    @ObservedObject var quoteArchiveStore: QuoteArchiveStore
     let customerID: UUID
     @Binding var selection: UUID?
+    @Binding var selectedTab: AppTab
+    @Binding var selectedMontageProjectID: UUID?
 
     @State private var name: String = ""
     @State private var phone: String = ""
@@ -168,9 +179,28 @@ private struct CustomerDetailView: View {
     @State private var editingNote: CustomerNote?
     @State private var isAddingNote = false
     @State private var selectedTab: CustomerDetailTab = .folie
+    @State private var viewingQuote: ArchivedQuote?
 
     private var customer: Customer? {
         store.customers.first { $0.id == customerID }
+    }
+
+    private var currency: FloatingPointFormatStyle<Double>.Currency {
+        .currency(code: "EUR").locale(Locale(identifier: "nl_NL"))
+    }
+
+    /// Offerte/montage-projecten die aan deze klant gekoppeld zijn (tabblad
+    /// Offerte), nieuwste eerst — zie `CalculationInput.linkedCustomerID`.
+    private var linkedProjects: [SavedProject] {
+        projectStore.projects
+            .filter { $0.input.linkedCustomerID == customerID }
+            .sorted { $0.modifiedAt > $1.modifiedAt }
+    }
+
+    /// Eerder verstuurde aanvragen (tabblad Aanvraag), gearchiveerd op het
+    /// moment van versturen — zie `QuoteArchiveStore`.
+    private var archivedQuotes: [ArchivedQuote] {
+        quoteArchiveStore.quotes(for: customerID)
     }
 
     var body: some View {
@@ -263,6 +293,13 @@ private struct CustomerDetailView: View {
                                 .buttonStyle(.plain)
                                 Spacer()
                                 Button {
+                                    sendToOrderList(line)
+                                } label: {
+                                    Image(systemName: "cart.badge.plus")
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Toevoegen aan bestellijst")
+                                Button {
                                     deleteLine(line)
                                 } label: {
                                     Image(systemName: "minus.circle")
@@ -277,6 +314,14 @@ private struct CustomerDetailView: View {
                         isAddingLine = true
                     } label: {
                         Label("Regel toevoegen", systemImage: "plus.circle.fill")
+                    }
+
+                    if !lines.isEmpty {
+                        Button {
+                            sendAllToOrderList(lines)
+                        } label: {
+                            Label("Alle folie naar bestellijst", systemImage: "cart.badge.plus")
+                        }
                     }
                 } header: {
                     Label("Folie / materiaal", systemImage: "square.stack.3d.up")
@@ -334,6 +379,68 @@ private struct CustomerDetailView: View {
                     }
                 } header: {
                     Label("Projecten & foto's", systemImage: "camera")
+                }
+            }
+
+            if selectedTab == .geschiedenis {
+                Section {
+                    if linkedProjects.isEmpty {
+                        Text("Nog geen offertes/montageprojecten gekoppeld aan deze klant.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(linkedProjects) { project in
+                            let result = calculate(input: project.input, settings: project.settings)
+                            Button {
+                                selectedMontageProjectID = project.id
+                                selectedTab = .montage
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(project.displayName)
+                                            .foregroundStyle(.primary)
+                                        Text(project.modifiedAt, format: .dateTime.day().month().year())
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(project.input.chosenPrice > 0 ? project.input.chosenPrice : result.suggestedPrice, format: currency)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                } header: {
+                    Label("Montage / offerte", systemImage: "wrench.and.screwdriver")
+                }
+
+                Section {
+                    if archivedQuotes.isEmpty {
+                        Text("Nog geen verzonden aanvragen gearchiveerd voor deze klant.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(archivedQuotes) { quote in
+                            Button {
+                                viewingQuote = quote
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(quote.channel)
+                                            .foregroundStyle(.primary)
+                                        Text(quote.sentAt, format: .dateTime.day().month().year().hour().minute())
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(quote.total, format: currency)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                } header: {
+                    Label("Verzonden aanvragen", systemImage: "paperplane")
                 }
             }
         }
@@ -424,6 +531,9 @@ private struct CustomerDetailView: View {
                 linkMoneybird(contact)
             }
         }
+        .sheet(item: $viewingQuote) { quote in
+            ArchivedQuoteDetailSheet(quote: quote, currency: currency)
+        }
         .confirmationDialog(
             "Klant verwijderen?",
             isPresented: $confirmDelete
@@ -444,6 +554,33 @@ private struct CustomerDetailView: View {
         guard var current = customer else { return }
         current.foilLines.removeAll { $0.id == line.id }
         store.update(current)
+    }
+
+    /// Voegt één folie-regel toe aan de bestellijst (kladblok), met de
+    /// klantnaam erachter zodat op de bestellijst duidelijk blijft voor wie
+    /// het is — net als het voorbeeld in OrderListItem's eigen documentatie.
+    /// Logt zelf niets; dat doen de twee aanroepende functies hieronder.
+    private func addLineToOrderList(_ line: CustomerFoilLine, customerName: String) {
+        let description = line.displayText.isEmpty ? "Folie" : line.displayText
+        let text = customerName.isEmpty ? description : "\(description) — \(customerName)"
+        orderListStore.add(text: text)
+    }
+
+    /// Stuurt één folie-regel door naar de bestellijst.
+    private func sendToOrderList(_ line: CustomerFoilLine) {
+        guard let current = customer else { return }
+        addLineToOrderList(line, customerName: current.name)
+        ActivityLogStore.shared.log("Folie naar bestellijst gestuurd voor \(current.name)", systemImage: "cart.badge.plus", tab: .klanten, customerID: current.id)
+    }
+
+    /// Stuurt in één keer alle folie-regels van deze klant door naar de
+    /// bestellijst, elk als eigen regel zodat je ze op de bestellijst nog
+    /// los kunt herschikken of aanpassen — met één samenvattende logregel
+    /// in plaats van eentje per folie-regel.
+    private func sendAllToOrderList(_ lines: [CustomerFoilLine]) {
+        guard let current = customer else { return }
+        for line in lines { addLineToOrderList(line, customerName: current.name) }
+        ActivityLogStore.shared.log("Alle folie (\(lines.count)x) naar bestellijst gestuurd voor \(current.name)", systemImage: "cart.badge.plus", tab: .klanten, customerID: current.id)
     }
 
     private func deleteNote(_ note: CustomerNote) {
@@ -625,6 +762,46 @@ private struct CustomerNoteEditorSheet: View {
     private func removePhoto(_ filename: String) {
         note.photoFilenames.removeAll { $0 == filename }
         CustomerPhotoStore.delete(filename)
+    }
+}
+
+/// Toont de volledige, op dat moment verstuurde kopieertekst van een
+/// gearchiveerde aanvraag (zie `QuoteArchiveStore`) — puur ter inzage, niet
+/// bewerkbaar, want het is een vaststaande momentopname uit het verleden.
+private struct ArchivedQuoteDetailSheet: View {
+    let quote: ArchivedQuote
+    let currency: FloatingPointFormatStyle<Double>.Currency
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    LabeledContent("Verzonden via", value: quote.channel)
+                    LabeledContent("Datum") {
+                        Text(quote.sentAt, format: .dateTime.day().month().year().hour().minute())
+                    }
+                    LabeledContent("Totaal") {
+                        Text(quote.total, format: currency)
+                    }
+                }
+                Section("Inhoud") {
+                    Text(quote.summary)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle("Aanvraag")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Sluiten") { dismiss() }
+                }
+            }
+        }
     }
 }
 

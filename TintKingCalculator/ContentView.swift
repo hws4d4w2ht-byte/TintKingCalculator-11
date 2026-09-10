@@ -91,10 +91,13 @@ struct ContentView: View {
     @StateObject private var customerStore = CustomerStore()
     @StateObject private var supplyStore = SupplyStore()
     @StateObject private var orderListStore = OrderListStore()
+    @StateObject private var projectStore = ProjectStore()
+    @StateObject private var quoteArchiveStore = QuoteArchiveStore()
     @StateObject private var reminderStore = ReminderStore()
     @ObservedObject private var activityLog = ActivityLogStore.shared
     @State private var selectedTab: AppTab = .home
     @State private var selectedCustomerID: UUID?
+    @State private var selectedMontageProjectID: UUID?
     @StateObject private var desktopTabOrderStore = DesktopTabOrderStore()
 
     var body: some View {
@@ -138,7 +141,7 @@ struct ContentView: View {
                     }
             }
         case .montage:
-            MontageCalculatorView(moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+            MontageCalculatorView(store: projectStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore, selectedMontageProjectID: $selectedMontageProjectID)
         case .tint:
             TintCalculatorView(requestStore: requestStore, priceListStore: priceListStore, customerStore: customerStore, moneybirdSettings: moneybirdSettings)
         case .dechrome:
@@ -154,11 +157,11 @@ struct ContentView: View {
         case .producten:
             ProductListView(store: productStore, requestStore: requestStore)
         case .aanvraag:
-            CombinedRequestView(store: requestStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+            CombinedRequestView(store: requestStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore, quoteArchiveStore: quoteArchiveStore)
         case .prijslijst:
             PriceListView(store: priceListStore)
         case .klanten:
-            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $selectedCustomerID)
+            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, orderListStore: orderListStore, projectStore: projectStore, quoteArchiveStore: quoteArchiveStore, selectedCustomerID: $selectedCustomerID, selectedTab: $selectedTab, selectedMontageProjectID: $selectedMontageProjectID)
         case .bestellijst:
             SupplyView(store: supplyStore, orderListStore: orderListStore)
         case .kozijn:

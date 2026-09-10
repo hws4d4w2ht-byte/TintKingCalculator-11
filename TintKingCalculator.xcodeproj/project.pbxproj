@@ -35,6 +35,7 @@
 		A32 /* OrderListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33 /* OrderListStore.swift */; };
 		A33 /* DechromeCalculationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34 /* DechromeCalculationStore.swift */; };
 		A34 /* KeyboardDismissModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35 /* KeyboardDismissModifier.swift */; };
+		A35 /* QuoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36 /* QuoteArchiveStore.swift */; };
 		A4 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
 		A5 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
 		A6 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
@@ -78,6 +79,7 @@
 		AI39 /* DechromeCalculationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34 /* DechromeCalculationStore.swift */; };
 		AI4 /* MobileDechromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI4 /* MobileDechromeView.swift */; };
 		AI40 /* KeyboardDismissModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35 /* KeyboardDismissModifier.swift */; };
+		AI41 /* QuoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36 /* QuoteArchiveStore.swift */; };
 		AI5 /* MobileRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI5 /* MobileRequestView.swift */; };
 		AI6 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
 		AI7 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
@@ -121,6 +123,7 @@
 		B33 /* OrderListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderListStore.swift; sourceTree = "<group>"; };
 		B34 /* DechromeCalculationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DechromeCalculationStore.swift; sourceTree = "<group>"; };
 		B35 /* KeyboardDismissModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDismissModifier.swift; sourceTree = "<group>"; };
+		B36 /* QuoteArchiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteArchiveStore.swift; sourceTree = "<group>"; };
 		B4 /* TintKingCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TintKingCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5 /* ProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStore.swift; sourceTree = "<group>"; };
 		B6 /* PriceListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListStore.swift; sourceTree = "<group>"; };
@@ -212,6 +215,7 @@
 				B33 /* OrderListStore.swift */,
 				B34 /* DechromeCalculationStore.swift */,
 				B35 /* KeyboardDismissModifier.swift */,
+				B36 /* QuoteArchiveStore.swift */,
 				B9 /* CloudSync.swift */,
 				B10 /* DechromePresetStore.swift */,
 				BA1 /* Assets.xcassets */,
@@ -392,6 +396,7 @@
 				A32 /* OrderListStore.swift in Sources */,
 				A33 /* DechromeCalculationStore.swift in Sources */,
 				A34 /* KeyboardDismissModifier.swift in Sources */,
+				A35 /* QuoteArchiveStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -439,6 +444,7 @@
 				AI38 /* OrderListStore.swift in Sources */,
 				AI39 /* DechromeCalculationStore.swift in Sources */,
 				AI40 /* KeyboardDismissModifier.swift in Sources */,
+				AI41 /* QuoteArchiveStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -402,14 +402,20 @@ private extension Customer {
 // MARK: - Seed vanuit het oude kladblok
 
 extension CustomerStore {
+    /// Elke klant hier heeft bewust een vast, hardgecodeerd ID (niet het
+    /// standaard willekeurige `UUID()`) — anders krijgt elk toestel dat ooit
+    /// met een lege klantenlijst opstart (bijv. na een herinstallatie) zijn
+    /// eigen, andere ID's voor dezelfde namen, en komen die na synchronisatie
+    /// als "verschillende" klanten naast elkaar te staan. Met een vast ID
+    /// wordt een hernieuwde seed altijd als dezelfde klant herkend.
     static let seedCustomers: [Customer] = [
-        Customer(name: "Striping RAM", foilLines: [
+        Customer(id: UUID(uuidString: "7E8382FD-02DC-40E0-98F6-EF1BF13A0F53")!, name: "Striping RAM", foilLines: [
             CustomerFoilLine(amount: "10 meter", type: "Oracal 970RA-070M Matt Black 1525mm"),
             CustomerFoilLine(amount: "10 meter", type: "3M 2080 gloss black"),
             CustomerFoilLine(amount: "5 meter", type: "1080-G251 Gloss Sterling Silver"),
             CustomerFoilLine(amount: "", type: "Oracal 970-305 geranienrot"),
         ]),
-        Customer(name: "Ziezo Solar", foilLines: [
+        Customer(id: UUID(uuidString: "F393F770-43CD-4801-AD06-31127EBCF40F")!, name: "Ziezo Solar", foilLines: [
             CustomerFoilLine(amount: "1 rol", type: "3M 2080-G25 gloss sunflower"),
             CustomerFoilLine(amount: "10 meter", type: "122cm Avery 759 Dark grey"),
             CustomerFoilLine(amount: "10 meter", type: "Oracal 970-070 black"),
@@ -418,35 +424,35 @@ extension CustomerStore {
             CustomerFoilLine(amount: "10 meter", type: "Avery 700 glans wit 122cm"),
             CustomerFoilLine(amount: "9 meter", type: "3M 2080 g127"),
         ]),
-        Customer(name: "Bako", foilLines: [
+        Customer(id: UUID(uuidString: "911B0C9D-30F8-4F36-B090-483A063F2962")!, name: "Bako", foilLines: [
             CustomerFoilLine(amount: "18 meter", type: "Avery SWF Rock Grey Gloss 1520mm"),
             CustomerFoilLine(amount: "10 meter", type: "3M 2080 zwart gloss"),
             CustomerFoilLine(amount: "1 rol", type: "3M 2080 zwart gloss in stroken"),
         ]),
-        Customer(name: "Total Cleaning", foilLines: [
+        Customer(id: UUID(uuidString: "A2CFF70A-501A-454E-B971-3C168BB541CC")!, name: "Total Cleaning", foilLines: [
             CustomerFoilLine(amount: "1 rol", type: "970-056"),
             CustomerFoilLine(amount: "4 meter", type: "970-057"),
             CustomerFoilLine(amount: "3 meter", type: "ORA,751C057"),
             CustomerFoilLine(amount: "3 meter", type: "ORA,751C056"),
         ]),
-        Customer(name: "Fiat Scudo", foilLines: [
+        Customer(id: UUID(uuidString: "F251B1F7-3CFC-4C37-A664-7A7B9EFFCB66")!, name: "Fiat Scudo", foilLines: [
             CustomerFoilLine(amount: "11 meter", type: "970-056"),
             CustomerFoilLine(amount: "5 meter", type: "ORA,751C057"),
             CustomerFoilLine(amount: "2 meter", type: "ORA,751C056"),
         ]),
-        Customer(name: "Opel Movano", foilLines: [
+        Customer(id: UUID(uuidString: "C02ACAE9-5377-4521-860D-C73F48C9BC63")!, name: "Opel Movano", foilLines: [
             CustomerFoilLine(amount: "12 meter", type: "Oracal 970-056"),
             CustomerFoilLine(amount: "7 meter", type: "Oracal 751-057 122cm"),
             CustomerFoilLine(amount: "3 meter", type: "Oracal 751-056 122cm"),
             CustomerFoilLine(amount: "5 meter", type: "Avery 700 white 122cm"),
         ]),
-        Customer(name: "Riwelti", foilLines: [
+        Customer(id: UUID(uuidString: "55C5787B-B298-45CF-82A9-CFA9A8953CB8")!, name: "Riwelti", foilLines: [
             CustomerFoilLine(amount: "5x", type: "Avery 784"),
             CustomerFoilLine(amount: "", type: "Avery 750"),
             CustomerFoilLine(amount: "8x", type: "Avery 777-017"),
             CustomerFoilLine(amount: "", type: "Oracal 970-711 stone grey"),
         ]),
-        Customer(name: "Xpel", foilLines: [
+        Customer(id: UUID(uuidString: "5F670330-9233-4793-922D-4A0E8E37BF4C")!, name: "Xpel", foilLines: [
             CustomerFoilLine(amount: "1x", type: "XPCSB2020-100"),
             CustomerFoilLine(amount: "1x", type: "XPCSB2030-100"),
             CustomerFoilLine(amount: "1x", type: "XPCSB2024-100"),
@@ -456,35 +462,35 @@ extension CustomerStore {
             CustomerFoilLine(amount: "1x", type: "XPCSB7020-100"),
             CustomerFoilLine(amount: "1x", type: "XPCSB7040-100"),
         ]),
-        Customer(name: "Wrapgear", foilLines: [
+        Customer(id: UUID(uuidString: "6757BF02-E72D-407C-A526-9C7FD2E9C0F0")!, name: "Wrapgear", foilLines: [
             CustomerFoilLine(amount: "6 meter", type: "Chameleon"),
         ]),
-        Customer(name: "Kamphorst", foilLines: [
+        Customer(id: UUID(uuidString: "6AC4629B-7A7D-49B0-97AE-6B57D771BDD7")!, name: "Kamphorst", foilLines: [
             CustomerFoilLine(amount: "10 meter", type: "Avery 777-092"),
             CustomerFoilLine(amount: "5 meter", type: "Avery 777-091"),
         ]),
-        Customer(name: "Verboom & van der Lans", foilLines: [
+        Customer(id: UUID(uuidString: "87B21348-75D6-43E7-86CF-EAE716FE9714")!, name: "Verboom & van der Lans", foilLines: [
             CustomerFoilLine(amount: "", type: "Avery 710 gold yellow"),
             CustomerFoilLine(amount: "", type: "Avery 724 cobalt blue"),
         ]),
-        Customer(name: "Ben Becker", foilLines: [
+        Customer(id: UUID(uuidString: "72CBBEF7-4C3C-4C9E-8469-AE3EA27DC9EA")!, name: "Ben Becker", foilLines: [
             CustomerFoilLine(amount: "6 meter", type: "Oracal 751-724 Ice Grey", note: "Nieuw"),
             CustomerFoilLine(amount: "4 meter", type: "Oracal 751-026 Purple Red", note: "Nieuw"),
             CustomerFoilLine(amount: "", type: "AVR 777-032CF iA Ice Grey", note: "Oud"),
             CustomerFoilLine(amount: "", type: "AVR 777-067CF iA Purple Red", note: "Oud"),
         ]),
-        Customer(name: "Krnwt", foilLines: [
+        Customer(id: UUID(uuidString: "8A375E38-6B65-4F5D-B2B1-CD0088977064")!, name: "Krnwt", foilLines: [
             CustomerFoilLine(amount: "4 meter", type: "Avery 700-724"),
             CustomerFoilLine(amount: "2 meter", type: "Avery 700-742"),
         ]),
-        Customer(name: "Alpha", foilLines: [
+        Customer(id: UUID(uuidString: "54856142-A05C-40BB-B562-514388DA9A84")!, name: "Alpha", foilLines: [
             CustomerFoilLine(amount: "", type: "Oracal 970RA-305 Geranium Red"),
         ]),
-        Customer(name: "Wasserij Soestdijk", foilLines: [
+        Customer(id: UUID(uuidString: "5036B310-FDF4-4DFB-8C67-CA445FA4DDFE")!, name: "Wasserij Soestdijk", foilLines: [
             CustomerFoilLine(amount: "9 meter", type: "122cm Avery 777-043CF"),
             CustomerFoilLine(amount: "5 meter", type: "122cm Avery 777-013CF"),
         ]),
-        Customer(name: "HoHo Sloopwerken", foilLines: [
+        Customer(id: UUID(uuidString: "9389890C-86B1-4063-8289-7FB387EB0A73")!, name: "HoHo Sloopwerken", foilLines: [
             CustomerFoilLine(amount: "", type: "Avery 777-073 telemagenta"),
             CustomerFoilLine(amount: "6x", type: "Avery Surface Cleaner"),
             CustomerFoilLine(amount: "10 meter", type: "Oracal 970RA-070M Matt Black 1525mm"),

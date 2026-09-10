@@ -61,7 +61,7 @@ private struct MobileSettingsSheet: View {
 
 /// Mobiele versie van het projectenoverzicht van de Offerte/montage-calculator.
 struct MobileMontageView: View {
-    @StateObject private var store = ProjectStore()
+    @ObservedObject var store: ProjectStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var customerStore: CustomerStore
     @State private var searchText = ""

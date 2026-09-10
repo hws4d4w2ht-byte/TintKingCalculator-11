@@ -6,6 +6,7 @@ struct MobileRequestView: View {
     @ObservedObject var store: RequestStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var customerStore: CustomerStore
+    @ObservedObject var quoteArchiveStore: QuoteArchiveStore
     @State private var discountMode: DiscountMode = .none
     @State private var discountPercentage: Double = 0
     @State private var discountFixedAmount: Double = 0
@@ -101,6 +102,14 @@ struct MobileRequestView: View {
         linkedCustomer?.name.isEmpty == false ? linkedCustomer!.name : "App klant"
     }
 
+    /// Legt de huidige aanvraag vast in het klantarchief (zie "Geschiedenis"
+    /// bij Klanten) — alleen zinvol als er een klant gekoppeld is, anders is
+    /// er niets om de geschiedenis aan te koppelen.
+    private func archiveQuote(channel: String) {
+        guard let customer = linkedCustomer else { return }
+        quoteArchiveStore.add(customerID: customer.id, channel: channel, summary: combinedQuoteText(), total: finalIncludingVAT)
+    }
+
     private func exportToMoneybird(asInvoice: Bool) {
         guard moneybirdSettings.isConfigured else {
             showMoneybirdSettings = true
@@ -134,6 +143,7 @@ struct MobileRequestView: View {
                     tab: .aanvraag,
                     customerID: linkedCustomer?.id
                 )
+                archiveQuote(channel: asInvoice ? "Moneybird factuur" : "Moneybird offerte")
             } catch {
                 moneybirdResultMessage = error.localizedDescription
                 moneybirdExportSucceeded = false
@@ -441,6 +451,7 @@ struct MobileRequestView: View {
                     } else {
                         UIPasteboard.general.string = whatsAppCombinedText
                     }
+                    archiveQuote(channel: "WhatsApp")
                 } label: {
                     Label("Kopieer voor WhatsApp", systemImage: "message.fill")
                         .frame(maxWidth: .infinity)
@@ -450,6 +461,7 @@ struct MobileRequestView: View {
 
                 Button {
                     UIPasteboard.general.string = emailCombinedText
+                    archiveQuote(channel: "E-mail")
                 } label: {
                     Label("Kopieer voor e-mail", systemImage: "envelope.fill")
                         .frame(maxWidth: .infinity)
