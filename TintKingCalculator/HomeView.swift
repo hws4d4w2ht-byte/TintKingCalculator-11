@@ -8,10 +8,13 @@ import UIKit
 
 /// Landingsscherm: laat de laatste handelingen in de app zien (nieuwe klant,
 /// notitie of foto toegevoegd, offerte/factuur verstuurd, Moneybird-koppeling),
-/// snelkoppelingen naar elk tabblad en een sectie met openstaande
-/// herinneringen uit Apple Herinneringen. Tikken op een activiteit springt
-/// naar het bijbehorende tabblad — bij een klant-gerelateerde activiteit
-/// meteen naar die klant in Klanten. Gedeeld tussen Mac en mobiel.
+/// snelkoppelingen naar elk tabblad, openstaande herinneringen uit Apple
+/// Herinneringen en te laat betaalde Moneybird-facturen. Gedeeld tussen Mac
+/// en mobiel: op de Mac (breed scherm) een overzicht in vakken met een
+/// rechterkolom voor de kleinere kaartjes, op mobiel de vertrouwde lijst
+/// onder elkaar. Tikken op een activiteit springt naar het bijbehorende
+/// tabblad — bij een klant-gerelateerde activiteit meteen naar die klant in
+/// Klanten.
 struct HomeView: View {
     @ObservedObject var activityLog: ActivityLogStore
     @Binding var selectedTab: AppTab
@@ -31,68 +34,17 @@ struct HomeView: View {
         return formatter
     }
 
+    private var currency: FloatingPointFormatStyle<Double>.Currency {
+        .currency(code: "EUR").locale(Locale(identifier: "nl_NL"))
+    }
+
     var body: some View {
-        List {
-            overdueInvoicesSection
-
-            Section("Snel naar") {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(quickLinks, id: \.self) { tab in
-                            Button {
-                                selectedTab = tab
-                            } label: {
-                                VStack(spacing: 6) {
-                                    Image(systemName: tab.systemImage)
-                                        .font(.title2)
-                                    Text(tab.title)
-                                        .font(.caption)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                }
-                                .frame(width: 84, height: 72)
-                                .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
-            remindersSection
-
-            Section("Laatste activiteit") {
-                if activityLog.entries.isEmpty {
-                    Text("Nog geen activiteit. Zodra je een klant toevoegt of een offerte verstuurt, zie je dat hier terug.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(activityLog.entries) { entry in
-                        Button {
-                            if let customerID = entry.customerID {
-                                selectedCustomerID = customerID
-                            }
-                            if let tab = entry.tab {
-                                selectedTab = tab
-                            }
-                        } label: {
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: entry.systemImage)
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 20)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(entry.text)
-                                        .foregroundStyle(.primary)
-                                    Text(relativeFormatter.localizedString(for: entry.date, relativeTo: Date()))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+        Group {
+            #if os(macOS)
+            macDashboard
+            #else
+            mobileList
+            #endif
         }
         .navigationTitle("Home")
         #if os(iOS)
@@ -106,109 +58,239 @@ struct HomeView: View {
         }
     }
 
-    private var currency: FloatingPointFormatStyle<Double>.Currency {
-        .currency(code: "EUR").locale(Locale(identifier: "nl_NL"))
-    }
+    // MARK: - Mac: overzicht in vakken (kaarten), gebruikmakend van de brede
+    // schermbreedte — links het belangrijkste (snelkoppelingen + activiteit),
+    // rechts een smallere kolom met de kleinere kaartjes.
 
-    /// Compact kaartje: alleen zichtbaar als Moneybird is ingesteld én er
-    /// daadwerkelijk te laat betaalde facturen zijn — anders geen extra
-    /// rommel op het beginscherm. Tikken op een factuur opent 'm in Moneybird.
-    @ViewBuilder
-    private var overdueInvoicesSection: some View {
-        if !overdueInvoicesStore.invoices.isEmpty {
-            Section {
-                ForEach(overdueInvoicesStore.invoices.prefix(3)) { invoice in
-                    Button {
-                        if let url = invoice.viewURL {
-                            #if os(macOS)
-                            NSWorkspace.shared.open(url)
-                            #else
-                            UIApplication.shared.open(url)
-                            #endif
-                        }
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(invoice.contactName)
-                                    .foregroundStyle(.primary)
-                                Text("\(invoice.daysOverdue) \(invoice.daysOverdue == 1 ? "dag" : "dagen") te laat")
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
+    #if os(macOS)
+    private var macDashboard: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                HomeCard(title: "Snel naar") {
+                    quickLinksRow
+                }
+
+                HStack(alignment: .top, spacing: 20) {
+                    HomeCard(title: "Laatste activiteit") {
+                        activityRows
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    VStack(spacing: 20) {
+                        if !overdueInvoicesStore.invoices.isEmpty {
+                            HomeCard(
+                                title: "Te laat betaalde facturen",
+                                titleColor: .red,
+                                trailing: {
+                                    Text(overdueInvoicesStore.totalOverdueAmount, format: currency)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+                            ) {
+                                overdueInvoicesRows
                             }
-                            Spacer()
-                            Text(invoice.totalPriceIncl, format: currency)
-                                .foregroundStyle(.secondary)
                         }
+
+                        HomeCard(
+                            title: "Herinneringen",
+                            trailing: {
+                                if reminderStore.isLoading {
+                                    ProgressView().controlSize(.small)
+                                }
+                            }
+                        ) {
+                            remindersRows
+                        }
+                    }
+                    .frame(width: 340)
+                }
+            }
+            .padding(24)
+        }
+    }
+    #endif
+
+    // MARK: - Mobiel: de vertrouwde lijst onder elkaar, past beter op een
+    // smal scherm dan kolommen naast elkaar.
+
+    #if os(iOS)
+    private var mobileList: some View {
+        List {
+            if !overdueInvoicesStore.invoices.isEmpty {
+                Section {
+                    overdueInvoicesRows
+                } header: {
+                    HStack {
+                        Label("Te laat betaalde facturen", systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                        Spacer()
+                        Text(overdueInvoicesStore.totalOverdueAmount, format: currency)
+                            .font(.caption.weight(.semibold))
+                    }
+                }
+            }
+
+            Section("Snel naar") {
+                quickLinksRow
+            }
+
+            Section {
+                remindersRows
+            } header: {
+                HStack {
+                    Text("Herinneringen")
+                    Spacer()
+                    if reminderStore.isLoading {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
+            }
+
+            Section("Laatste activiteit") {
+                activityRows
+            }
+        }
+    }
+    #endif
+
+    // MARK: - Gedeelde inhoud (los van de lay-out eromheen), zodat Mac en
+    // mobiel precies dezelfde gegevens en tik-logica gebruiken.
+
+    private var quickLinksRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(quickLinks, id: \.self) { tab in
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: tab.systemImage)
+                                .font(.title2)
+                            Text(tab.title)
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                        }
+                        .frame(width: 84, height: 72)
+                        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
                 }
-                if overdueInvoicesStore.invoices.count > 3 {
-                    Text("+ \(overdueInvoicesStore.invoices.count - 3) meer")
-                        .font(.caption)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    /// Rijen voor het facturen-kaartje — bewust maar een handvol tonen
+    /// (de rest achter "+ N meer"), ook al is de lijst na het filter op
+    /// maximaal een jaar oud meestal al kort.
+    @ViewBuilder
+    private var overdueInvoicesRows: some View {
+        ForEach(overdueInvoicesStore.invoices.prefix(5)) { invoice in
+            Button {
+                if let url = invoice.viewURL {
+                    #if os(macOS)
+                    NSWorkspace.shared.open(url)
+                    #else
+                    UIApplication.shared.open(url)
+                    #endif
+                }
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(invoice.contactName)
+                            .foregroundStyle(.primary)
+                        Text("\(invoice.daysOverdue) \(invoice.daysOverdue == 1 ? "dag" : "dagen") te laat")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                    Spacer()
+                    Text(invoice.totalPriceIncl, format: currency)
                         .foregroundStyle(.secondary)
                 }
-            } header: {
-                HStack {
-                    Label("Te laat betaalde facturen", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                    Spacer()
-                    Text(overdueInvoicesStore.totalOverdueAmount, format: currency)
-                        .font(.caption.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+        }
+        if overdueInvoicesStore.invoices.count > 5 {
+            Text("+ \(overdueInvoicesStore.invoices.count - 5) meer")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private var remindersRows: some View {
+        switch reminderStore.authorizationStatus {
+        case .fullAccess:
+            if reminderStore.items.isEmpty {
+                Text("Geen openstaande herinneringen. 🎉")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(reminderStore.items) { item in
+                    HStack(alignment: .top, spacing: 10) {
+                        Button {
+                            reminderStore.complete(item)
+                        } label: {
+                            Image(systemName: "circle")
+                        }
+                        .buttonStyle(.borderless)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                            if let dueDate = item.dueDate {
+                                Text(dueDate, format: .dateTime.day().month().hour().minute())
+                                    .font(.caption)
+                                    .foregroundStyle(item.isOverdue ? Color.red : Color.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+        case .notDetermined:
+            Button("Toegang tot Herinneringen geven") {
+                reminderStore.requestAccess()
+            }
+        default:
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Geen toegang tot Herinneringen.")
+                    .foregroundStyle(.secondary)
+                Button("Open instellingen") {
+                    openReminderSettings()
                 }
             }
         }
     }
 
     @ViewBuilder
-    private var remindersSection: some View {
-        Section {
-            switch reminderStore.authorizationStatus {
-            case .fullAccess:
-                if reminderStore.items.isEmpty {
-                    Text("Geen openstaande herinneringen. 🎉")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(reminderStore.items) { item in
-                        HStack(alignment: .top, spacing: 10) {
-                            Button {
-                                reminderStore.complete(item)
-                            } label: {
-                                Image(systemName: "circle")
-                            }
-                            .buttonStyle(.borderless)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(item.title)
-                                if let dueDate = item.dueDate {
-                                    Text(dueDate, format: .dateTime.day().month().hour().minute())
-                                        .font(.caption)
-                                        .foregroundStyle(item.isOverdue ? Color.red : Color.secondary)
-                                }
-                            }
+    private var activityRows: some View {
+        if activityLog.entries.isEmpty {
+            Text("Nog geen activiteit. Zodra je een klant toevoegt of een offerte verstuurt, zie je dat hier terug.")
+                .foregroundStyle(.secondary)
+        } else {
+            ForEach(activityLog.entries) { entry in
+                Button {
+                    if let customerID = entry.customerID {
+                        selectedCustomerID = customerID
+                    }
+                    if let tab = entry.tab {
+                        selectedTab = tab
+                    }
+                } label: {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: entry.systemImage)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 20)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.text)
+                                .foregroundStyle(.primary)
+                            Text(relativeFormatter.localizedString(for: entry.date, relativeTo: Date()))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
-            case .notDetermined:
-                Button("Toegang tot Herinneringen geven") {
-                    reminderStore.requestAccess()
-                }
-            default:
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Geen toegang tot Herinneringen.")
-                        .foregroundStyle(.secondary)
-                    Button("Open instellingen") {
-                        openReminderSettings()
-                    }
-                }
-            }
-        } header: {
-            HStack {
-                Text("Herinneringen")
-                Spacer()
-                if reminderStore.isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -225,3 +307,36 @@ struct HomeView: View {
         #endif
     }
 }
+
+#if os(macOS)
+/// Eén "vak" op het Mac-beginscherm: titel + optionele rechtse toelichting
+/// (bijv. een totaalbedrag of laad-indicator) in de kop, en de inhoud
+/// daaronder — dezelfde losse-kaartjes-stijl als de rest van de Mac-app.
+private struct HomeCard<Trailing: View, Content: View>: View {
+    let title: String
+    var titleColor: Color = .primary
+    @ViewBuilder var trailing: () -> Trailing = { EmptyView() }
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(titleColor)
+                Spacer()
+                trailing()
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                content()
+            }
+        }
+        .padding(16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+    }
+}
+#endif

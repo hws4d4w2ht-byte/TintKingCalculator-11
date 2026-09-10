@@ -26,7 +26,11 @@ final class OverdueInvoicesStore: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
+            // Facturen die meer dan een jaar te laat zijn, zijn in de praktijk
+            // toch niet meer actueel op te volgen — die verbergen we hier,
+            // zodat het kaartje relevant blijft.
             invoices = try await MoneybirdExportService.fetchOverdueInvoices(settings: settings)
+                .filter { $0.daysOverdue <= 365 }
             lastError = nil
         } catch {
             lastError = error.localizedDescription
