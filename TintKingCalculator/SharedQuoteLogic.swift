@@ -1,4 +1,5 @@
 import Foundation
+import CloudKit
 
 let carBodyTypes: [String] = [
     "Hatchback (3 deuren)",
@@ -11,7 +12,7 @@ let carBodyTypes: [String] = [
     "Pick-up"
 ]
 
-enum DiscountMode: String, CaseIterable, Identifiable {
+enum DiscountMode: String, CaseIterable, Identifiable, Codable {
     case none = "Geen korting"
     case percentage = "Percentage"
     case fixed = "Vast bedrag"
@@ -61,12 +62,12 @@ func padColumn(_ text: String, width: Int = 30) -> String {
 /// Eén gekozen submenu-optie (bijv. "Zwart" bij "Kleur") met de meerprijs die
 /// erbij hoort, voor het los tonen van wat zo'n optie/"subproduct" kost in de
 /// Aanvraag — apart van de totale regelprijs.
-struct QuoteItemOption: Hashable {
+struct QuoteItemOption: Hashable, Codable {
     var name: String
     var price: Double
 }
 
-struct QuoteItem: Hashable {
+struct QuoteItem: Hashable, Codable {
     var name: String
     var price: Double
 
@@ -242,7 +243,7 @@ func formatVehicleInfoLines(brand: String, model: String, bodyType: String, year
     return result
 }
 
-func offerteEmailTemplate(vehicleLines: [String], items: [QuoteItem], totalLabel: String, total: Double) -> String {
+func offerteEmailTemplate(vehicleLines: [String], items: [QuoteItem], totalLabel: String, total: Double, showExcludingVATBreakdown: Bool = false, itemsExcludeVAT: Bool = false) -> String {
     var out: [String] = []
     if !vehicleLines.isEmpty {
         out.append("VOERTUIG")
@@ -253,25 +254,64 @@ func offerteEmailTemplate(vehicleLines: [String], items: [QuoteItem], totalLabel
     out.append("OFFERTE")
     out.append(String(repeating: "-", count: 7))
     out.append("")
-    out.append(padColumn("Omschrijving") + "Prijs incl. BTW")
+
+    // Kolombreedte dynamisch op de langste regel afstemmen (i.p.v. de vaste
+    // standaardbreedte van padColumn), zodat ook een lange omschrijving (bijv.
+    // "Moeilijkheids-, risico- en overige toeslag") niet uit de kolom loopt —
+    // de bedragen blijven zo altijd netjes onder elkaar staan, zolang dit in
+    // een monospaced lettertype getoond wordt.
+    let summaryLabels = itemsExcludeVAT ? ["Subtotaal excl. btw", "Btw (21%)", "TOTAAL incl. btw"] : [totalLabel]
+    let allLabels = ["Omschrijving"] + items.map(\.name) + summaryLabels
+    let columnWidth = max(30, (allLabels.map(\.count).max() ?? 0) + 2)
+
+    let priceHeader = itemsExcludeVAT ? "Prijs excl. BTW" : "Prijs incl. BTW"
+    out.append(padColumn("Omschrijving", width: columnWidth) + priceHeader)
     if items.isEmpty {
         out.append("Nog geen werkzaamheden geselecteerd.")
     } else {
         for item in items {
-            out.append(padColumn(item.name) + dutchPriceString(item.price))
+            out.append(padColumn(item.name, width: columnWidth) + dutchPriceString(item.price))
         }
     }
     out.append("")
-    let totalLine = padColumn(totalLabel) + dutchPriceString(total)
-    let dashWidth = max(48, totalLine.count)
-    let dashes = String(repeating: "-", count: dashWidth)
-    out.append(dashes)
-    out.append(totalLine)
-    out.append(dashes)
+
+    if itemsExcludeVAT {
+        // Voor zakelijke offertes (bijv. Montage): de regels hierboven staan
+        // zelf al excl. btw, en onderaan komt de volledige opbouw excl. → btw
+        // → incl. i.p.v. één totaalregel incl. btw. `total` blijft, net als
+        // bij de andere calculators, het bedrag incl. btw — de excl.- en
+        // btw-bedragen worden hieruit afgeleid.
+        let excl = excludingVAT(fromIncludingVAT: total)
+        let btw = total - excl
+        let exclLine = padColumn(summaryLabels[0], width: columnWidth) + dutchPriceString(excl)
+        let dashWidth = max(48, exclLine.count)
+        let dashes = String(repeating: "-", count: dashWidth)
+        out.append(dashes)
+        out.append(exclLine)
+        out.append(padColumn(summaryLabels[1], width: columnWidth) + dutchPriceString(btw))
+        out.append(padColumn(summaryLabels[2], width: columnWidth) + dutchPriceString(total))
+        out.append(dashes)
+    } else {
+        let totalLine = padColumn(totalLabel, width: columnWidth) + dutchPriceString(total)
+        let dashWidth = max(48, totalLine.count)
+        let dashes = String(repeating: "-", count: dashWidth)
+        out.append(dashes)
+        out.append(totalLine)
+        out.append(dashes)
+        // "Weergave prijsopgave"-knop: toont er, als gewenst, de excl.-btw- en
+        // btw-regel onder de totaalbalk bij, zowel voor e-mail als WhatsApp —
+        // dezelfde opmaak die de Aanvraag-pagina al gebruikt.
+        if showExcludingVATBreakdown {
+            let excl2 = excludingVAT(fromIncludingVAT: total)
+            out.append("")
+            out.append(padColumn("Totaal excl. btw", width: columnWidth) + dutchPriceString(excl2))
+            out.append(padColumn("Btw 21%", width: columnWidth) + dutchPriceString(total - excl2))
+        }
+    }
     return out.joined(separator: "\n")
 }
 
-struct RequestLine: Identifiable, Hashable {
+struct RequestLine: Identifiable, Hashable, Codable {
     let id: UUID
     var category: String
     var vehicleLines: [String]
@@ -280,30 +320,65 @@ struct RequestLine: Identifiable, Hashable {
     /// Of de prijzen van deze regel al btw bevatten. Bijna alles in de app
     /// rekent met prijzen incl. btw (voor de klantweergave), maar sommige
     /// producten (bijv. Striping) staan als catalogusprijs excl. btw in de
-    /// productenlijst. Dit bepaalt alleen hoe de regel naar Moneybird wordt
-    /// gestuurd (zie `moneybirdLines`): bij `true` wordt de btw er eerst
-    /// afgehaald zodat Moneybird 'm niet dubbel rekent, bij `false` gaat het
-    /// bedrag ongewijzigd mee en telt Moneybird zelf de btw erbij op. De
-    /// klantweergave (Aanvraag, WhatsApp, e-mail, PDF) blijft in beide
-    /// gevallen ongewijzigd.
+    /// productenlijst. Dit bepaalt hoe de regel naar Moneybird wordt gestuurd
+    /// (zie `moneybirdLines`) én hoe de kopieerknoppen (WhatsApp/e-mail) 'm
+    /// laten zien: bij `true` verandert er niets, bij `false` wordt de btw er
+    /// bij Moneybird eerst afgehaald (zodat 't niet dubbel gerekend wordt) en
+    /// juist bij het kopiëren van de klanttekst weer bovenop gezet (zie
+    /// `displayTotal`). Het Aanvraag-scherm zelf (het totaalbedrag dat je
+    /// hier ziet) verandert door deze knop bewust niet — die toont altijd
+    /// gewoon `total`.
     var priceIncludesVAT: Bool = true
+    /// Voor cloud-synchronisatie: bij een conflict (dezelfde regel op twee
+    /// apparaten gewijzigd) wint de nieuwste wijziging — zie `RequestStore`.
+    var modifiedAt: Date = Date()
 
-    init(id: UUID = UUID(), category: String, vehicleLines: [String], items: [QuoteItem], total: Double, priceIncludesVAT: Bool = true) {
+    init(id: UUID = UUID(), category: String, vehicleLines: [String], items: [QuoteItem], total: Double, priceIncludesVAT: Bool = true, modifiedAt: Date = Date()) {
         self.id = id
         self.category = category
         self.vehicleLines = vehicleLines
         self.items = items
         self.total = total
         self.priceIncludesVAT = priceIncludesVAT
+        self.modifiedAt = modifiedAt
+    }
+
+    /// Regel-subtotaal zoals het in de kopieerknoppen (WhatsApp/e-mail) komt
+    /// te staan: staat de regel op "excl. btw" (zie `priceIncludesVAT`), dan
+    /// komt de btw hier alsnog bij, zodat de gekopieerde tekst het bedrag
+    /// toont dat de klant echt moet betalen. Wordt bewust NIET gebruikt voor
+    /// het Aanvraag-scherm zelf (zie `RequestStore.total`) — alleen voor de
+    /// kopieertekst.
+    var displayTotal: Double {
+        priceIncludesVAT ? total : includingVAT(fromExcludingVAT: total)
     }
 }
 
+@MainActor
 final class RequestStore: ObservableObject {
     @Published var lines: [RequestLine] = []
     @Published var vehicleBrand: String = ""
     @Published var vehicleModel: String = ""
     @Published var vehicleBodyType: String = ""
     @Published var vehicleYear: String = ""
+    /// De klant (uit Klantgegevens) waar deze aanvraag voor is — gedeeld
+    /// tussen Ramen tinten, Ontchromen, Snijfolie en Aanvraag (die allemaal
+    /// dezelfde RequestStore gebruiken), zodat je 'm maar op één plek hoeft
+    /// te kiezen. Bepaalt, als de klant een Moneybird-koppeling heeft, naar
+    /// welke Moneybird-klant de Aanvraag geëxporteerd wordt in plaats van de
+    /// vaste placeholder-klant.
+    @Published var linkedCustomerID: UUID?
+    @Published private(set) var isSyncing = false
+    @Published private(set) var lastSyncedAt: Date?
+
+    private let storageKey = "TintKing.Aanvraag.Lines.v1"
+    private let syncedIDsKey = "TintKing.Sync.SyncedRequestLineIDs"
+    private let pendingDeletionsKey = "TintKing.Sync.PendingRequestLineDeletions"
+
+    init() {
+        load()
+        Task { await syncWithCloud() }
+    }
 
     var total: Double { lines.reduce(0) { $0 + $1.total } }
 
@@ -314,7 +389,10 @@ final class RequestStore: ObservableObject {
     /// Voegt altijd een nieuwe regel toe (i.p.v. te overschrijven), zodat je bijvoorbeeld
     /// meerdere auto's voor "Ramen tinten" achter elkaar aan de aanvraag kunt toevoegen.
     func add(category: String, items: [QuoteItem], total: Double) {
-        lines.append(RequestLine(category: category, vehicleLines: vehicleInfoLines, items: items, total: total))
+        let line = RequestLine(category: category, vehicleLines: vehicleInfoLines, items: items, total: total)
+        lines.append(line)
+        persistLocally()
+        Task { await push(line) }
     }
 
     func clearVehicleInfo() {
@@ -326,6 +404,9 @@ final class RequestStore: ObservableObject {
 
     func remove(id: UUID) {
         lines.removeAll { $0.id == id }
+        persistLocally()
+        addPendingDeletion(id)
+        Task { await flushPendingDeletions() }
     }
 
     /// Past de naam en/of prijs van één regel-item aan (bijv. om een kenteken
@@ -342,6 +423,9 @@ final class RequestStore: ObservableObject {
         lines[lineIndex].items[itemIndex].name = newName
         lines[lineIndex].items[itemIndex].price = newPrice
         lines[lineIndex].total += priceDelta
+        lines[lineIndex].modifiedAt = Date()
+        persistLocally()
+        Task { await push(lines[lineIndex]) }
     }
 
     /// Zet of de prijzen van deze regel al btw bevatten — zie
@@ -350,6 +434,9 @@ final class RequestStore: ObservableObject {
     func setPriceIncludesVAT(lineID: UUID, includesVAT: Bool) {
         guard let index = lines.firstIndex(where: { $0.id == lineID }) else { return }
         lines[index].priceIncludesVAT = includesVAT
+        lines[index].modifiedAt = Date()
+        persistLocally()
+        Task { await push(lines[index]) }
     }
 
     func move(id: UUID, direction: Int) {
@@ -357,9 +444,192 @@ final class RequestStore: ObservableObject {
         let target = index + direction
         guard lines.indices.contains(target) else { return }
         lines.swapAt(index, target)
+        persistLocally()
     }
 
-    func clear() { lines.removeAll() }
+    func clear() {
+        let ids = lines.map(\.id)
+        lines.removeAll()
+        persistLocally()
+        for id in ids { addPendingDeletion(id) }
+        Task { await flushPendingDeletions() }
+    }
+
+    // MARK: - Lokale opslag
+
+    private func load() {
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let decoded = try? JSONDecoder().decode([RequestLine].self, from: data) else { return }
+        lines = decoded
+    }
+
+    private func persistLocally() {
+        guard let data = try? JSONEncoder().encode(lines) else { return }
+        UserDefaults.standard.set(data, forKey: storageKey)
+    }
+
+    // MARK: - Cloud-synchronisatie
+    //
+    // Elke regel in de aanvraag is een los record (op id), net als bij
+    // ProjectStore/CustomerStore — zo overschrijft een wijziging op het ene
+    // apparaat niet de wijzigingen van een ander apparaat. De voertuig-
+    // scratchvelden (`vehicleBrand` e.d.) en `linkedCustomerID` worden bewust
+    // niet gesynchroniseerd: dat is tijdelijke invoer voor de eerstvolgende
+    // regel, geen vastgelegde data.
+
+    private var syncedIDs: Set<UUID> {
+        get { Set((UserDefaults.standard.array(forKey: syncedIDsKey) as? [String] ?? []).compactMap(UUID.init)) }
+        set { UserDefaults.standard.set(newValue.map(\.uuidString), forKey: syncedIDsKey) }
+    }
+
+    private var pendingDeletions: Set<UUID> {
+        get { Set((UserDefaults.standard.array(forKey: pendingDeletionsKey) as? [String] ?? []).compactMap(UUID.init)) }
+        set { UserDefaults.standard.set(newValue.map(\.uuidString), forKey: pendingDeletionsKey) }
+    }
+
+    private func addPendingDeletion(_ id: UUID) {
+        var current = pendingDeletions
+        current.insert(id)
+        pendingDeletions = current
+        var synced = syncedIDs
+        synced.remove(id)
+        syncedIDs = synced
+    }
+
+    /// Haalt de laatste stand op, voegt regels van andere apparaten toe, werkt
+    /// gewijzigde regels bij, en verwijdert regels die elders zijn verwijderd.
+    func syncWithCloud() async {
+        guard await CloudSyncCenter.shared.isAccountAvailable else { return }
+        isSyncing = true
+        defer { isSyncing = false }
+
+        await flushPendingDeletions()
+
+        let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: RequestLine.recordType)
+        let remoteLines = remoteRecords.compactMap(RequestLine.init(record:))
+        let remoteByID = Dictionary(uniqueKeysWithValues: remoteLines.map { ($0.id, $0) })
+
+        var currentSyncedIDs = syncedIDs
+        var idsToPush: [UUID] = []
+        var idsToRemove: Set<UUID> = []
+        var merged = lines
+        var changed = false
+
+        // Bestaande regels op hun huidige plek bijwerken met een nieuwere
+        // versie van een ander apparaat — bewust GEEN herschikking van de
+        // hele lijst, zodat de volgorde die je zelf met de pijltjes-knoppen
+        // hebt ingesteld intact blijft.
+        for index in merged.indices {
+            let local = merged[index]
+            if let remote = remoteByID[local.id] {
+                currentSyncedIDs.insert(local.id)
+                if remote.modifiedAt > local.modifiedAt {
+                    merged[index] = remote
+                    changed = true
+                } else if local.modifiedAt > remote.modifiedAt {
+                    idsToPush.append(local.id)
+                }
+            } else if currentSyncedIDs.contains(local.id) {
+                // Was al eens gesynchroniseerd maar staat nu niet meer in de
+                // cloud: elders verwijderd.
+                idsToRemove.insert(local.id)
+            } else {
+                idsToPush.append(local.id)
+            }
+        }
+        if !idsToRemove.isEmpty {
+            merged.removeAll { idsToRemove.contains($0.id) }
+            changed = true
+        }
+
+        // Nieuwe regels van andere apparaten die hier nog niet bestaan: achteraan toevoegen.
+        let localIDs = Set(merged.map(\.id))
+        for remote in remoteLines where !localIDs.contains(remote.id) {
+            merged.append(remote)
+            currentSyncedIDs.insert(remote.id)
+            changed = true
+        }
+
+        syncedIDs = currentSyncedIDs
+
+        if changed {
+            lines = merged
+            persistLocally()
+        }
+
+        for id in idsToPush {
+            if let line = merged.first(where: { $0.id == id }) {
+                await push(line)
+            }
+        }
+
+        lastSyncedAt = Date()
+    }
+
+    private func push(_ line: RequestLine) async {
+        let record = line.toCKRecord(zoneID: CloudSyncCenter.shared.zoneID)
+        if await CloudSyncCenter.shared.save(records: [record]) {
+            var synced = syncedIDs
+            synced.insert(line.id)
+            syncedIDs = synced
+        }
+    }
+
+    private func flushPendingDeletions() async {
+        let ids = pendingDeletions
+        guard !ids.isEmpty else { return }
+        let recordIDs = ids.map { CloudSyncCenter.shared.recordID(name: $0.uuidString) }
+        if await CloudSyncCenter.shared.delete(recordIDs: recordIDs) {
+            pendingDeletions = []
+        }
+    }
+}
+
+// MARK: - Cloud-mapping
+
+private extension RequestLine {
+    static let recordType = "RequestLine"
+
+    func toCKRecord(zoneID: CKRecordZone.ID) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: id.uuidString, zoneID: zoneID)
+        let record = CKRecord(recordType: Self.recordType, recordID: recordID)
+        record["category"] = category as NSString
+        record["modifiedAt"] = modifiedAt as NSDate
+        record["total"] = total as NSNumber
+        record["priceIncludesVAT"] = (priceIncludesVAT ? 1.0 : 0.0) as NSNumber
+        if let data = try? JSONEncoder().encode(vehicleLines), let json = String(data: data, encoding: .utf8) {
+            record["vehicleLinesJSON"] = json as NSString
+        }
+        if let data = try? JSONEncoder().encode(items), let json = String(data: data, encoding: .utf8) {
+            record["itemsJSON"] = json as NSString
+        }
+        return record
+    }
+
+    init?(record: CKRecord) {
+        guard
+            let id = UUID(uuidString: record.recordID.recordName),
+            let category = record["category"] as? String,
+            let modifiedAt = record["modifiedAt"] as? Date,
+            let totalNumber = record["total"] as? NSNumber,
+            let vehicleLinesJSON = record["vehicleLinesJSON"] as? String,
+            let vehicleLinesData = vehicleLinesJSON.data(using: .utf8),
+            let vehicleLines = try? JSONDecoder().decode([String].self, from: vehicleLinesData),
+            let itemsJSON = record["itemsJSON"] as? String,
+            let itemsData = itemsJSON.data(using: .utf8),
+            let items = try? JSONDecoder().decode([QuoteItem].self, from: itemsData)
+        else { return nil }
+        let priceIncludesVATNumber = (record["priceIncludesVAT"] as? NSNumber)?.doubleValue ?? 1.0
+        self.init(
+            id: id,
+            category: category,
+            vehicleLines: vehicleLines,
+            items: items,
+            total: totalNumber.doubleValue,
+            priceIncludesVAT: priceIncludesVATNumber >= 0.5,
+            modifiedAt: modifiedAt
+        )
+    }
 }
 
 struct TintPriceItem: Identifiable, Hashable {
@@ -439,3 +709,25 @@ let dechromePresets: [String: [String: Double]] = [
         "blauwe raamlijst": 180, "blauwe strip grill": 60, "chrome oplaadklep": 40
     ]
 ]
+
+// MARK: - WhatsApp-koppeling
+
+/// Bouwt een wa.me-link met vooraf ingevuld bericht, zodat WhatsApp direct
+/// opent met de tekst klaar om te versturen — in plaats van eerst te moeten
+/// kopiëren en plakken. Herkent Nederlandse nummers zonder landcode (bijv.
+/// "06 1234 5678" of een vast nummer met "0" ervoor) en zet die om naar +31.
+enum WhatsAppLink {
+    static func url(phone: String, message: String) -> URL? {
+        var digits = phone.filter { $0.isNumber || $0 == "+" }
+        guard digits.contains(where: \.isNumber) else { return nil }
+        if digits.hasPrefix("+") {
+            digits.removeFirst()
+        } else if digits.hasPrefix("00") {
+            digits.removeFirst(2)
+        } else if digits.hasPrefix("0") {
+            digits = "31" + digits.dropFirst()
+        }
+        guard let encodedMessage = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        return URL(string: "https://wa.me/\(digits)?text=\(encodedMessage)")
+    }
+}

@@ -1,8 +1,7 @@
 import SwiftUI
-import UIKit
+import AppKit
 
-/// Mobiele versie van de gecombineerde Aanvraag-weergave van de Mac-app.
-struct MobileRequestView: View {
+struct CombinedRequestView: View {
     @ObservedObject var store: RequestStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var customerStore: CustomerStore
@@ -10,6 +9,7 @@ struct MobileRequestView: View {
     @State private var discountPercentage: Double = 0
     @State private var discountFixedAmount: Double = 0
     @State private var showExcludingVAT = true
+    @State private var showDisplaySettings = false
 
     @State private var showMoneybirdSettings = false
     @State private var isExportingToMoneybird = false
@@ -27,7 +27,18 @@ struct MobileRequestView: View {
     @State private var editItemName = ""
     @State private var editItemPrice: Double = 0
 
-    private var currency: FloatingPointFormatStyle<Double>.Currency { mobileCurrency }
+    private var currency: FloatingPointFormatStyle<Double>.Currency {
+        .currency(code: "EUR").locale(Locale(identifier: "nl_NL"))
+    }
+
+    private var linkedCustomer: Customer? {
+        guard let id = store.linkedCustomerID else { return nil }
+        return customerStore.customers.first { $0.id == id }
+    }
+
+    private var linkedContactId: String? { linkedCustomer?.moneybirdContact?.id }
+
+    private var exportTargetName: String { linkedCustomer?.moneybirdContact?.name ?? "App klant" }
 
     private var requestDiscount: Double {
         discountValue(total: store.total, mode: discountMode, percentage: discountPercentage, fixedAmount: discountFixedAmount)
@@ -88,19 +99,6 @@ struct MobileRequestView: View {
         return lines
     }
 
-    private var linkedCustomer: Customer? {
-        guard let id = store.linkedCustomerID else { return nil }
-        return customerStore.customers.first { $0.id == id }
-    }
-
-    private var linkedContactId: String? {
-        linkedCustomer?.moneybirdContact?.id
-    }
-
-    private var exportTargetName: String {
-        linkedCustomer?.name.isEmpty == false ? linkedCustomer!.name : "App klant"
-    }
-
     private func exportToMoneybird(asInvoice: Bool) {
         guard moneybirdSettings.isConfigured else {
             showMoneybirdSettings = true
@@ -143,10 +141,11 @@ struct MobileRequestView: View {
         }
     }
 
-    /// Prijs van één item zoals de klant 'm te zien krijgt: staat de regel op
-    /// "excl. btw" (zie `RequestLine.priceIncludesVAT`), dan komt de btw er
-    /// hier ook bij — net als bij `RequestLine.displayTotal` — zodat de losse
-    /// regels in de tekst optellen tot hetzelfde subtotaal dat eronder staat.
+    /// Prijs van één item zoals 'm in de kopieerknoppen komt te staan: staat
+    /// de regel op "excl. btw" (zie `RequestLine.priceIncludesVAT`), dan komt
+    /// de btw er hier ook bij — net als bij `RequestLine.displayTotal` —
+    /// zodat de losse regels in de tekst optellen tot hetzelfde subtotaal dat
+    /// eronder staat. Heeft bewust geen effect op het Aanvraag-scherm zelf.
     private func displayPrice(_ price: Double, for line: RequestLine) -> Double {
         line.priceIncludesVAT ? price : includingVAT(fromExcludingVAT: price)
     }
@@ -207,7 +206,7 @@ struct MobileRequestView: View {
             out += padColumn("Korting") + dutchPriceString(-copyDiscount) + "\n"
         }
         // Volgorde bewust excl. btw → btw → incl. btw, met TOTAAL incl. BTW
-        // als laatste regel — net als de Totaal-kaart erboven en de Montage-
+        // als laatste regel — net als de Totaal-kaart ernaast en de Montage-
         // offertetekst.
         let totalLine = padColumn("TOTAAL incl. BTW") + dutchPriceString(copyFinalIncludingVAT)
         let dashes = String(repeating: "-", count: max(48, totalLine.count))
@@ -251,7 +250,7 @@ struct MobileRequestView: View {
                 HStack(spacing: 8) {
                     AppNumberField(placeholder: "0,00", value: $editItemPrice)
                         .multilineTextAlignment(.trailing)
-                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 90)
                     Text("€")
                     Spacer()
                     Button {
@@ -295,84 +294,120 @@ struct MobileRequestView: View {
                 .buttonStyle(.borderless)
             }
             .foregroundStyle(.secondary)
+            .textSelection(.enabled)
         }
     }
 
     var body: some View {
-        List {
-            if store.lines.isEmpty {
-                Section {
-                    ContentUnavailableView(
-                        "Nog niets toegevoegd",
-                        systemImage: "cart",
-                        description: Text("Ga naar Ramen tinten of Ontchromen en tik op 'Toevoegen aan aanvraag'.")
+        HSplitView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    TintKingHeader(
+                        title: "Aanvraag",
+                        subtitle: "Combineer werkzaamheden in één nette prijsopgave.",
+                        icon: "cart"
                     )
-                }
-            } else {
-                ForEach(Array(store.lines.enumerated()), id: \.element.id) { index, line in
-                    Section {
-                        HStack {
-                            Text(line.category)
-                                .font(.headline)
-                            Spacer()
-                            Text(line.total, format: currency)
-                                .font(.headline)
-                        }
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Naar Moneybird:")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Picker("", selection: Binding(
-                                get: { line.priceIncludesVAT },
-                                set: { store.setPriceIncludesVAT(lineID: line.id, includesVAT: $0) }
-                            )) {
-                                Text("prijs incl. btw").tag(true)
-                                Text("prijs excl. btw").tag(false)
+                    if store.lines.isEmpty {
+                        ContentUnavailableView(
+                            "Nog niets toegevoegd",
+                            systemImage: "cart",
+                            description: Text("Ga naar Ramen tinten of Ontchromen en klik op 'Toevoegen aan aanvraag'.")
+                        )
+                        .frame(maxWidth: .infinity, minHeight: 300)
+                    } else {
+                        ForEach(Array(store.lines.enumerated()), id: \.element.id) { index, line in
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Text(line.category)
+                                        .font(.title3.bold())
+                                    Spacer()
+                                    Text(line.total, format: currency)
+                                        .font(.title3.bold())
+
+                                    Button {
+                                        store.move(id: line.id, direction: -1)
+                                    } label: {
+                                        Image(systemName: "arrow.up")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .disabled(index == 0)
+
+                                    Button {
+                                        store.move(id: line.id, direction: 1)
+                                    } label: {
+                                        Image(systemName: "arrow.down")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .disabled(index == store.lines.count - 1)
+
+                                    Button(role: .destructive) {
+                                        store.remove(id: line.id)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                    }
+                                    .buttonStyle(.borderless)
+                                }
+
+                                HStack(spacing: 6) {
+                                    Text("Naar Moneybird:")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Picker("", selection: Binding(
+                                        get: { line.priceIncludesVAT },
+                                        set: { store.setPriceIncludesVAT(lineID: line.id, includesVAT: $0) }
+                                    )) {
+                                        Text("prijs incl. btw").tag(true)
+                                        Text("prijs excl. btw").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(maxWidth: 260)
+                                    .labelsHidden()
+                                }
+                                .help("Bepaalt alleen hoe deze regel naar Moneybird gestuurd wordt: bij \"incl. btw\" haalt de app zelf de btw eraf, bij \"excl. btw\" gaat het bedrag ongewijzigd mee en telt Moneybird de btw er zelf bij op.")
+
+                                if !line.vehicleLines.isEmpty {
+                                    ForEach(line.vehicleLines, id: \.self) { vehicleLine in
+                                        Text(vehicleLine)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                ForEach(Array(line.items.enumerated()), id: \.offset) { itemIndex, item in
+                                    requestItemRow(line: line, itemIndex: itemIndex, item: item)
+                                }
+
+                                Divider()
+
+                                HStack {
+                                    Text("Subtotaal")
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Text(line.total, format: currency)
+                                        .fontWeight(.semibold)
+                                }
                             }
-                            .pickerStyle(.segmented)
-                            .labelsHidden()
-                        }
-
-                        if !line.vehicleLines.isEmpty {
-                            ForEach(line.vehicleLines, id: \.self) { vehicleLine in
-                                Text(vehicleLine)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        ForEach(Array(line.items.enumerated()), id: \.offset) { itemIndex, item in
-                            requestItemRow(line: line, itemIndex: itemIndex, item: item)
-                        }
-
-                        HStack {
-                            Text("Subtotaal").fontWeight(.semibold)
-                            Spacer()
-                            Text(line.total, format: currency).fontWeight(.semibold)
-                        }
-
-                        HStack {
-                            MobileReorderButtons(
-                                canMoveUp: index != 0,
-                                canMoveDown: index != store.lines.count - 1,
-                                moveUp: { store.move(id: line.id, direction: -1) },
-                                moveDown: { store.move(id: line.id, direction: 1) }
-                            )
-                            Spacer()
-                            Button(role: .destructive) {
-                                store.remove(id: line.id)
-                            } label: {
-                                Label("Verwijder", systemImage: "trash")
-                            }
-                            .buttonStyle(.borderless)
+                            .cardStyle()
                         }
                     }
                 }
+                .padding(24)
             }
+            .frame(minWidth: 600)
 
-            Section("Totaal") {
+            ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                TintKingHeader(
+                    title: "Totaal",
+                    subtitle: "Samenvatting van deze aanvraag",
+                    icon: "eurosign.circle"
+                )
+
                 VStack(alignment: .leading, spacing: 8) {
+                    Text("Totaal aanvraag")
+                        .foregroundStyle(.secondary)
+
                     if requestDiscount > 0 {
                         HStack {
                             Text("Voor korting")
@@ -402,105 +437,154 @@ struct MobileRequestView: View {
                         Divider()
                     }
 
-                    Text(finalIncludingVAT, format: currency)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
-                    Text("incl. btw")
-                        .font(.subheadline)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(finalIncludingVAT, format: currency)
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                        Text("incl. btw")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .cardStyle()
+
+                HStack(spacing: 8) {
+                    Button {
+                        showDisplaySettings = true
+                    } label: {
+                        Label("Weergave & korting", systemImage: "slider.horizontal.3")
+                    }
+                    .popover(isPresented: $showDisplaySettings, arrowEdge: .bottom) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Weergave prijsopgave").font(.headline)
+
+                                Toggle("Toon excl. btw en btw-bedrag", isOn: $showExcludingVAT)
+
+                                Text(showExcludingVAT
+                                     ? "Zakelijke weergave: excl. btw, btw-bedrag en incl. btw."
+                                     : "Klantweergave: alleen de prijs inclusief btw.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Korting").font(.headline)
+
+                                Picker("Korting", selection: $discountMode) {
+                                    ForEach(DiscountMode.allCases) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+
+                                if discountMode == .percentage {
+                                    HStack {
+                                        Text("Korting")
+                                        Spacer()
+                                        AppNumberField(placeholder: "0", value: $discountPercentage)
+                                            .multilineTextAlignment(.trailing)
+                                            .frame(width: 75)
+                                        Text("%")
+                                    }
+                                } else if discountMode == .fixed {
+                                    HStack {
+                                        Text("Korting")
+                                        Spacer()
+                                        AppNumberField(placeholder: "0", value: $discountFixedAmount)
+                                            .multilineTextAlignment(.trailing)
+                                            .frame(width: 85)
+                                        Text("€")
+                                    }
+                                }
+                            }
+                        }
+                        .padding(18)
+                        .frame(width: 300)
+                    }
+
+                    if discountMode != .none {
+                        Text(discountMode == .percentage ? "\(discountPercentage.formatted())% korting" : "Korting \(discountFixedAmount.formatted(currency))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Voorbeeld van de kopieertekst").font(.headline)
+                    Text("Dit is precies de tekst die de knoppen hieronder kopiëren voor WhatsApp of e-mail — inclusief de weergave en korting die je hierboven kiest.")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
-            }
-
-            Section("Weergave prijsopgave") {
-                Toggle("Toon excl. btw en btw-bedrag", isOn: $showExcludingVAT)
-                Text(showExcludingVAT
-                     ? "Zakelijke weergave: excl. btw, btw-bedrag en incl. btw."
-                     : "Klantweergave: alleen de prijs inclusief btw.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Korting") {
-                MobileDiscountSection(mode: $discountMode, percentage: $discountPercentage, fixedAmount: $discountFixedAmount)
-            }
-
-            Section("Voorbeeld van de kopieertekst") {
-                Text("Dit is precies de tekst die de knoppen hieronder kopiëren voor WhatsApp of e-mail — inclusief de weergave en korting die je hierboven kiest.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(combinedQuoteText())
-                    .font(.system(.caption, design: .monospaced))
-                    .textSelection(.enabled)
-                    .padding(.vertical, 2)
-            }
-
-            Section {
-                Button {
-                    if let phone = linkedCustomer?.whatsAppPhone, let url = WhatsAppLink.url(phone: phone, message: whatsAppCombinedText) {
-                        UIApplication.shared.open(url)
-                    } else {
-                        UIPasteboard.general.string = whatsAppCombinedText
+                    ScrollView {
+                        Text(combinedQuoteText())
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                } label: {
-                    Label("Kopieer voor WhatsApp", systemImage: "message.fill")
-                        .frame(maxWidth: .infinity)
+                    .frame(height: 220)
+                    .padding(10)
+                    .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
-                .buttonStyle(.bordered)
-                .disabled(store.lines.isEmpty)
+                .cardStyle()
 
-                Button {
-                    UIPasteboard.general.string = emailCombinedText
-                } label: {
-                    Label("Kopieer voor e-mail", systemImage: "envelope.fill")
-                        .frame(maxWidth: .infinity)
+                HStack {
+                    Button {
+                        if let phone = linkedCustomer?.whatsAppPhone, let url = WhatsAppLink.url(phone: phone, message: whatsAppCombinedText) {
+                            NSWorkspace.shared.open(url)
+                        } else {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(whatsAppCombinedText, forType: .string)
+                        }
+                    } label: {
+                        Label(linkedCustomer?.whatsAppPhone != nil ? "WhatsApp naar \(linkedCustomer?.name ?? "")" : "Kopieer voor WhatsApp", systemImage: "message.fill")
+                    }
+                    .disabled(store.lines.isEmpty)
+
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(emailCombinedText, forType: .string)
+                    } label: {
+                        Label("Kopieer voor e-mail", systemImage: "envelope.fill")
+                    }
+                    .disabled(store.lines.isEmpty)
                 }
-                .buttonStyle(.bordered)
-                .disabled(store.lines.isEmpty)
-            }
 
-            Section {
                 LinkedCustomerPicker(customerStore: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $store.linkedCustomerID)
-            }
 
-            Section {
-                Button {
-                    exportToMoneybird(asInvoice: false)
-                } label: {
-                    if isExportingToMoneybird {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Label("Offerte naar Moneybird", systemImage: "arrow.up.doc")
-                            .frame(maxWidth: .infinity)
+                HStack {
+                    Button {
+                        exportToMoneybird(asInvoice: false)
+                    } label: {
+                        if isExportingToMoneybird {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Label("Offerte naar Moneybird", systemImage: "arrow.up.doc")
+                        }
                     }
-                }
-                .buttonStyle(.bordered)
-                .disabled(store.lines.isEmpty || isExportingToMoneybird)
+                    .disabled(store.lines.isEmpty || isExportingToMoneybird)
 
-                Button {
-                    exportToMoneybird(asInvoice: true)
-                } label: {
-                    if isExportingToMoneybird {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Label("Factuur naar Moneybird", systemImage: "doc.text.fill")
-                            .frame(maxWidth: .infinity)
+                    Button {
+                        exportToMoneybird(asInvoice: true)
+                    } label: {
+                        if isExportingToMoneybird {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Label("Factuur naar Moneybird", systemImage: "doc.text.fill")
+                        }
                     }
-                }
-                .buttonStyle(.bordered)
-                .disabled(store.lines.isEmpty || isExportingToMoneybird)
+                    .disabled(store.lines.isEmpty || isExportingToMoneybird)
 
-                Button {
-                    showMoneybirdSettings = true
-                } label: {
-                    Label("Moneybird-instellingen", systemImage: "gearshape")
-                        .frame(maxWidth: .infinity)
+                    Button {
+                        showMoneybirdSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .help("Moneybird-instellingen")
                 }
-                .buttonStyle(.borderless)
-            }
 
-            Section {
                 Button(role: .destructive) {
                     store.clear()
                     discountMode = .none
@@ -510,13 +594,13 @@ struct MobileRequestView: View {
                     Label("Wis aanvraag", systemImage: "trash")
                 }
                 .disabled(store.lines.isEmpty)
+
+                Spacer()
             }
+            .padding(24)
+            }
+            .frame(minWidth: 360, idealWidth: 430)
         }
-        .listStyle(.insetGrouped)
-        .environment(\.defaultMinListRowHeight, 36)
-        .listSectionSpacing(.compact)
-        .withKeyboardDismiss()
-        .navigationTitle("Aanvraag")
         .sheet(isPresented: $showMoneybirdSettings) {
             NavigationStack {
                 MoneybirdSettingsView(settings: moneybirdSettings, onDone: { showMoneybirdSettings = false })

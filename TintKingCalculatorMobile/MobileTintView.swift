@@ -7,6 +7,8 @@ import UIKit
 struct MobileTintView: View {
     @ObservedObject var requestStore: RequestStore
     @ObservedObject var priceListStore: PriceListStore
+    @ObservedObject var customerStore: CustomerStore
+    @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
 
     @State private var selectedBaseID = "Geen basispakket"
     @State private var selectedExtraIDs: Set<String> = []
@@ -17,6 +19,7 @@ struct MobileTintView: View {
     @State private var discountMode: DiscountMode = .none
     @State private var discountPercentage: Double = 0
     @State private var discountFixedAmount: Double = 0
+    @State private var showExcludingVAT = false
 
     private var currency: FloatingPointFormatStyle<Double>.Currency { mobileCurrency }
 
@@ -94,27 +97,14 @@ struct MobileTintView: View {
             vehicleLines: requestStore.vehicleInfoLines,
             items: lineItems,
             totalLabel: "TOTAAL incl. BTW",
-            total: tintFinalIncludingVAT
+            total: tintFinalIncludingVAT,
+            showExcludingVATBreakdown: showExcludingVAT
         )
     }
 
-    private var whatsAppSummaryText: String {
-        var lines: [String] = []
-        if base.price > 0 {
-            lines.append("- \(base.name): \(effectiveBasePrice.formatted(currency))")
-        }
-        for item in selectedExtras {
-            let qty = quantities[item.id] ?? 1
-            let qtyText = qty > 1 ? "\(qty)x " : ""
-            lines.append("- \(qtyText)\(item.name): \((effectiveExtraPrice(for: item) * Double(qty)).formatted(currency))")
-        }
-        if lines.isEmpty { lines.append("Nog geen werkzaamheden geselecteerd.") }
-        if tintDiscount > 0 {
-            lines.append("Korting: -\(tintDiscount.formatted(currency))")
-        }
-        lines.append("Totaal: \(tintFinalIncludingVAT.formatted(currency)) incl. btw")
-        return lines.joined(separator: "\n")
-    }
+    /// Dezelfde opmaak als de e-mailtekst — zodat beide kopieerknoppen er
+    /// hetzelfde uitzien.
+    private var whatsAppSummaryText: String { emailSummaryText }
 
     private func resetCalculator() {
         selectedBaseID = "Geen basispakket"
@@ -130,6 +120,10 @@ struct MobileTintView: View {
 
     var body: some View {
         List {
+            Section {
+                LinkedCustomerPicker(customerStore: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $requestStore.linkedCustomerID)
+            }
+
             Section {
                 MobileVehicleInfoCard(store: requestStore)
             }
@@ -310,8 +304,12 @@ struct MobileTintView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Toggle("Toon excl. btw en btw-bedrag bij kopiëren", isOn: $showExcludingVAT)
+                    .font(.caption)
+
                 MobileActionButtons(
                     whatsAppText: { whatsAppSummaryText },
+                    whatsAppPhone: { customerStore.customer(withID: requestStore.linkedCustomerID)?.whatsAppPhone },
                     emailText: { emailSummaryText },
                     addToRequest: {
                         requestStore.add(category: "Ramen tinten", items: lineItems, total: tintFinalIncludingVAT)
@@ -326,6 +324,9 @@ struct MobileTintView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.defaultMinListRowHeight, 36)
+        .listSectionSpacing(.compact)
+        .withKeyboardDismiss()
         .navigationTitle("Ramen tinten")
     }
 }

@@ -8,14 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		A1 /* TintKingCalculatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1 /* TintKingCalculatorApp.swift */; };
-		A2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2 /* ContentView.swift */; };
-		A3 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
-		A4 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
-		A5 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
-		A6 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
-		A7 /* SharedQuoteLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8 /* SharedQuoteLogic.swift */; };
-		A8 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9 /* CloudSync.swift */; };
-		A9 /* DechromePresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10 /* DechromePresetStore.swift */; };
 		A10 /* CutFoilSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B11 /* CutFoilSettingsView.swift */; };
 		A11 /* PriceListImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12 /* PriceListImportExport.swift */; };
 		A12 /* AppNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13 /* AppNumberField.swift */; };
@@ -26,6 +18,31 @@
 		A17 /* ProductStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18 /* ProductStore.swift */; };
 		A18 /* ProductImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19 /* ProductImportExport.swift */; };
 		A19 /* ProductListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20 /* ProductListView.swift */; };
+		A2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2 /* ContentView.swift */; };
+		A20 /* CustomerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21 /* CustomerStore.swift */; };
+		A21 /* CustomerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22 /* CustomerView.swift */; };
+		A22 /* ActivityLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23 /* ActivityLog.swift */; };
+		A23 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24 /* HomeView.swift */; };
+		A24 /* SupplyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25 /* SupplyStore.swift */; };
+		A25 /* SupplyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26 /* SupplyView.swift */; };
+		A26 /* ReminderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B27 /* ReminderStore.swift */; };
+		A27 /* KozijnStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28 /* KozijnStore.swift */; };
+		A28 /* KozijnCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29 /* KozijnCalculatorView.swift */; };
+		A29 /* KozijnProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30 /* KozijnProjectStore.swift */; };
+		A3 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
+		A30 /* DesktopTabOrderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31 /* DesktopTabOrderStore.swift */; };
+		A31 /* DesktopTabOrderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B32 /* DesktopTabOrderView.swift */; };
+		A32 /* OrderListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33 /* OrderListStore.swift */; };
+		A33 /* DechromeCalculationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34 /* DechromeCalculationStore.swift */; };
+		A34 /* KeyboardDismissModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35 /* KeyboardDismissModifier.swift */; };
+		A4 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
+		A5 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
+		A6 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
+		A7 /* SharedQuoteLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8 /* SharedQuoteLogic.swift */; };
+		A8 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9 /* CloudSync.swift */; };
+		A9 /* DechromePresetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10 /* DechromePresetStore.swift */; };
+		AA1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA1 /* Assets.xcassets */; };
+		AAI1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BAI1 /* Assets.xcassets */; };
 		AI1 /* TintKingCalculatorApp_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI1 /* TintKingCalculatorApp_iOS.swift */; };
 		AI10 /* SharedQuoteLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8 /* SharedQuoteLogic.swift */; };
 		AI11 /* MobileMontageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI7 /* MobileMontageView.swift */; };
@@ -37,20 +54,41 @@
 		AI17 /* PriceListImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12 /* PriceListImportExport.swift */; };
 		AI18 /* AppNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13 /* AppNumberField.swift */; };
 		AI19 /* MeasurementModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B14 /* MeasurementModel.swift */; };
+		AI2 /* MobileContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI2 /* MobileContentView.swift */; };
 		AI20 /* MeasurementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15 /* MeasurementStore.swift */; };
 		AI21 /* MeasureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16 /* MeasureView.swift */; };
 		AI22 /* MoneybirdExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17 /* MoneybirdExportService.swift */; };
 		AI23 /* ProductStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B18 /* ProductStore.swift */; };
 		AI24 /* ProductImportExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19 /* ProductImportExport.swift */; };
 		AI25 /* ProductListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20 /* ProductListView.swift */; };
-		AI2 /* MobileContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI2 /* MobileContentView.swift */; };
+		AI26 /* CustomerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21 /* CustomerStore.swift */; };
+		AI27 /* CustomerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22 /* CustomerView.swift */; };
+		AI28 /* ActivityLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23 /* ActivityLog.swift */; };
+		AI29 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24 /* HomeView.swift */; };
 		AI3 /* MobileTintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI3 /* MobileTintView.swift */; };
+		AI30 /* SupplyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25 /* SupplyStore.swift */; };
+		AI31 /* SupplyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26 /* SupplyView.swift */; };
+		AI32 /* TabOrderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI10 /* TabOrderStore.swift */; };
+		AI33 /* TabOrderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI11 /* TabOrderView.swift */; };
+		AI34 /* ReminderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B27 /* ReminderStore.swift */; };
+		AI35 /* KozijnStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B28 /* KozijnStore.swift */; };
+		AI36 /* KozijnCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29 /* KozijnCalculatorView.swift */; };
+		AI37 /* KozijnProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30 /* KozijnProjectStore.swift */; };
+		AI38 /* OrderListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33 /* OrderListStore.swift */; };
+		AI39 /* DechromeCalculationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B34 /* DechromeCalculationStore.swift */; };
 		AI4 /* MobileDechromeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI4 /* MobileDechromeView.swift */; };
+		AI40 /* KeyboardDismissModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35 /* KeyboardDismissModifier.swift */; };
 		AI5 /* MobileRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI5 /* MobileRequestView.swift */; };
 		AI6 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
 		AI7 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
 		AI8 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
 		AI9 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
+		E34434E430515448008EB53B /* TintCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34434E230515448008EB53B /* TintCalculatorView.swift */; };
+		E34434E630515487008EB53B /* SnijfolieCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34434E530515487008EB53B /* SnijfolieCalculatorView.swift */; };
+		E34434E9305154A8008EB53B /* RollCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34434E8305154A8008EB53B /* RollCalculatorView.swift */; };
+		E34434ED30515500008EB53B /* DechromeCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34434EB30515500008EB53B /* DechromeCalculatorView.swift */; };
+		E34434EF3051556A008EB53B /* CombinedRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34434EE3051556A008EB53B /* CombinedRequestView.swift */; };
+		E34434F3305155E3008EB53B /* MontageCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34434F1305155E3008EB53B /* MontageCalculatorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,16 +103,35 @@
 		B17 /* MoneybirdExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoneybirdExportService.swift; sourceTree = "<group>"; };
 		B18 /* ProductStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductStore.swift; sourceTree = "<group>"; };
 		B19 /* ProductImportExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductImportExport.swift; sourceTree = "<group>"; };
-		B20 /* ProductListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListView.swift; sourceTree = "<group>"; };
 		B2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B20 /* ProductListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListView.swift; sourceTree = "<group>"; };
+		B21 /* CustomerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerStore.swift; sourceTree = "<group>"; };
+		B22 /* CustomerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerView.swift; sourceTree = "<group>"; };
+		B23 /* ActivityLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLog.swift; sourceTree = "<group>"; };
+		B24 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B25 /* SupplyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplyStore.swift; sourceTree = "<group>"; };
+		B26 /* SupplyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplyView.swift; sourceTree = "<group>"; };
+		B27 /* ReminderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderStore.swift; sourceTree = "<group>"; };
+		B28 /* KozijnStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KozijnStore.swift; sourceTree = "<group>"; };
+		B29 /* KozijnCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KozijnCalculatorView.swift; sourceTree = "<group>"; };
 		B3 /* CalculatorModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculatorModel.swift; sourceTree = "<group>"; };
+		B30 /* KozijnProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KozijnProjectStore.swift; sourceTree = "<group>"; };
+		B31 /* DesktopTabOrderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTabOrderStore.swift; sourceTree = "<group>"; };
+		B32 /* DesktopTabOrderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTabOrderView.swift; sourceTree = "<group>"; };
+		B33 /* OrderListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderListStore.swift; sourceTree = "<group>"; };
+		B34 /* DechromeCalculationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DechromeCalculationStore.swift; sourceTree = "<group>"; };
+		B35 /* KeyboardDismissModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDismissModifier.swift; sourceTree = "<group>"; };
 		B4 /* TintKingCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TintKingCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5 /* ProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStore.swift; sourceTree = "<group>"; };
 		B6 /* PriceListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListStore.swift; sourceTree = "<group>"; };
 		B7 /* PriceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListView.swift; sourceTree = "<group>"; };
 		B8 /* SharedQuoteLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedQuoteLogic.swift; sourceTree = "<group>"; };
 		B9 /* CloudSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSync.swift; sourceTree = "<group>"; };
+		BA1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BAI1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BI1 /* TintKingCalculatorApp_iOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TintKingCalculatorApp_iOS.swift; sourceTree = "<group>"; };
+		BI10 /* TabOrderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrderStore.swift; sourceTree = "<group>"; };
+		BI11 /* TabOrderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrderView.swift; sourceTree = "<group>"; };
 		BI2 /* MobileContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileContentView.swift; sourceTree = "<group>"; };
 		BI3 /* MobileTintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileTintView.swift; sourceTree = "<group>"; };
 		BI4 /* MobileDechromeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileDechromeView.swift; sourceTree = "<group>"; };
@@ -85,6 +142,12 @@
 		BI9 /* MobileSnijfolieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileSnijfolieView.swift; sourceTree = "<group>"; };
 		E2 /* TintKingCalculator.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TintKingCalculator.entitlements; sourceTree = "<group>"; };
 		E3 /* TintKingCalculatorMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TintKingCalculatorMobile.entitlements; sourceTree = "<group>"; };
+		E34434E230515448008EB53B /* TintCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TintCalculatorView.swift; sourceTree = "<group>"; };
+		E34434E530515487008EB53B /* SnijfolieCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnijfolieCalculatorView.swift; sourceTree = "<group>"; };
+		E34434E8305154A8008EB53B /* RollCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RollCalculatorView.swift; sourceTree = "<group>"; };
+		E34434EB30515500008EB53B /* DechromeCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DechromeCalculatorView.swift; sourceTree = "<group>"; };
+		E34434EE3051556A008EB53B /* CombinedRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombinedRequestView.swift; sourceTree = "<group>"; };
+		E34434F1305155E3008EB53B /* MontageCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MontageCalculatorView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,9 +197,31 @@
 				B18 /* ProductStore.swift */,
 				B19 /* ProductImportExport.swift */,
 				B20 /* ProductListView.swift */,
+				B21 /* CustomerStore.swift */,
+				B22 /* CustomerView.swift */,
+				B23 /* ActivityLog.swift */,
+				B24 /* HomeView.swift */,
+				B25 /* SupplyStore.swift */,
+				B26 /* SupplyView.swift */,
+				B27 /* ReminderStore.swift */,
+				B28 /* KozijnStore.swift */,
+				B29 /* KozijnCalculatorView.swift */,
+				B30 /* KozijnProjectStore.swift */,
+				B31 /* DesktopTabOrderStore.swift */,
+				B32 /* DesktopTabOrderView.swift */,
+				B33 /* OrderListStore.swift */,
+				B34 /* DechromeCalculationStore.swift */,
+				B35 /* KeyboardDismissModifier.swift */,
 				B9 /* CloudSync.swift */,
 				B10 /* DechromePresetStore.swift */,
+				BA1 /* Assets.xcassets */,
 				E2 /* TintKingCalculator.entitlements */,
+				E34434E230515448008EB53B /* TintCalculatorView.swift */,
+				E34434E530515487008EB53B /* SnijfolieCalculatorView.swift */,
+				E34434E8305154A8008EB53B /* RollCalculatorView.swift */,
+				E34434EB30515500008EB53B /* DechromeCalculatorView.swift */,
+				E34434EE3051556A008EB53B /* CombinedRequestView.swift */,
+				E34434F1305155E3008EB53B /* MontageCalculatorView.swift */,
 			);
 			path = TintKingCalculator;
 			sourceTree = "<group>";
@@ -161,6 +246,9 @@
 				BI7 /* MobileMontageView.swift */,
 				BI8 /* MobileRollCalculatorView.swift */,
 				BI9 /* MobileSnijfolieView.swift */,
+				BI10 /* TabOrderStore.swift */,
+				BI11 /* TabOrderView.swift */,
+				BAI1 /* Assets.xcassets */,
 				E3 /* TintKingCalculatorMobile.entitlements */,
 			);
 			path = TintKingCalculatorMobile;
@@ -245,6 +333,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA1 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,6 +341,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAI1 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,10 +353,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1 /* TintKingCalculatorApp.swift in Sources */,
+				E34434EF3051556A008EB53B /* CombinedRequestView.swift in Sources */,
 				A2 /* ContentView.swift in Sources */,
 				A3 /* CalculatorModel.swift in Sources */,
 				A4 /* ProjectStore.swift in Sources */,
 				A5 /* PriceListStore.swift in Sources */,
+				E34434F3305155E3008EB53B /* MontageCalculatorView.swift in Sources */,
 				A6 /* PriceListView.swift in Sources */,
 				A7 /* SharedQuoteLogic.swift in Sources */,
 				A8 /* CloudSync.swift in Sources */,
@@ -280,7 +372,26 @@
 				A16 /* MoneybirdExportService.swift in Sources */,
 				A17 /* ProductStore.swift in Sources */,
 				A18 /* ProductImportExport.swift in Sources */,
+				E34434E9305154A8008EB53B /* RollCalculatorView.swift in Sources */,
 				A19 /* ProductListView.swift in Sources */,
+				A20 /* CustomerStore.swift in Sources */,
+				A21 /* CustomerView.swift in Sources */,
+				A22 /* ActivityLog.swift in Sources */,
+				A23 /* HomeView.swift in Sources */,
+				A24 /* SupplyStore.swift in Sources */,
+				E34434E630515487008EB53B /* SnijfolieCalculatorView.swift in Sources */,
+				A25 /* SupplyView.swift in Sources */,
+				A26 /* ReminderStore.swift in Sources */,
+				E34434E430515448008EB53B /* TintCalculatorView.swift in Sources */,
+				A27 /* KozijnStore.swift in Sources */,
+				A28 /* KozijnCalculatorView.swift in Sources */,
+				A29 /* KozijnProjectStore.swift in Sources */,
+				A30 /* DesktopTabOrderStore.swift in Sources */,
+				E34434ED30515500008EB53B /* DechromeCalculatorView.swift in Sources */,
+				A31 /* DesktopTabOrderView.swift in Sources */,
+				A32 /* OrderListStore.swift in Sources */,
+				A33 /* DechromeCalculationStore.swift in Sources */,
+				A34 /* KeyboardDismissModifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +424,21 @@
 				AI23 /* ProductStore.swift in Sources */,
 				AI24 /* ProductImportExport.swift in Sources */,
 				AI25 /* ProductListView.swift in Sources */,
+				AI26 /* CustomerStore.swift in Sources */,
+				AI27 /* CustomerView.swift in Sources */,
+				AI28 /* ActivityLog.swift in Sources */,
+				AI29 /* HomeView.swift in Sources */,
+				AI30 /* SupplyStore.swift in Sources */,
+				AI31 /* SupplyView.swift in Sources */,
+				AI32 /* TabOrderStore.swift in Sources */,
+				AI33 /* TabOrderView.swift in Sources */,
+				AI34 /* ReminderStore.swift in Sources */,
+				AI35 /* KozijnStore.swift in Sources */,
+				AI36 /* KozijnCalculatorView.swift in Sources */,
+				AI37 /* KozijnProjectStore.swift in Sources */,
+				AI38 /* OrderListStore.swift in Sources */,
+				AI39 /* DechromeCalculationStore.swift in Sources */,
+				AI40 /* KeyboardDismissModifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,6 +481,7 @@
 		I3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TintKingCalculator/TintKingCalculator.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -363,6 +490,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Calculator";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -379,6 +507,7 @@
 		I4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TintKingCalculator/TintKingCalculator.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -387,6 +516,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Calculator";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -403,6 +533,7 @@
 		II1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TintKingCalculatorMobile/TintKingCalculatorMobile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -410,6 +541,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Mobiel";
 				INFOPLIST_KEY_NSCameraUsageDescription = "TintKing gebruikt de camera om foto's te maken voor het meten-tabblad.";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -433,6 +565,7 @@
 		II2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = TintKingCalculatorMobile/TintKingCalculatorMobile.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -440,6 +573,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Mobiel";
 				INFOPLIST_KEY_NSCameraUsageDescription = "TintKing gebruikt de camera om foto's te maken voor het meten-tabblad.";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";

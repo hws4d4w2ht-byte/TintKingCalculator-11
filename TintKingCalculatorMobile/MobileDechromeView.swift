@@ -1,12 +1,14 @@
 import SwiftUI
 import UIKit
 
-/// Mobiele versie van de Ontchromen-calculator van de Mac-app. De presets komen uit
-/// de gedeelde, met iCloud gesynchroniseerde DechromePresetStore (zie DechromePresetStore.swift).
+/// Mobiele versie van de Ontchromen-calculator van de Mac-app. Opgeslagen calculaties komen
+/// uit de gedeelde, met iCloud gesynchroniseerde DechromeCalculationStore (zie DechromeCalculationStore.swift).
 struct MobileDechromeView: View {
     @ObservedObject var requestStore: RequestStore
     @ObservedObject var priceListStore: PriceListStore
-    @StateObject private var customPresetStore = DechromePresetStore()
+    @ObservedObject var customerStore: CustomerStore
+    @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
+    @StateObject private var savedStore = DechromeCalculationStore()
 
     @State private var vehicle = "Vrij samenstellen"
     @State private var selectedParts: Set<String> = []
@@ -18,8 +20,10 @@ struct MobileDechromeView: View {
     @State private var discountMode: DiscountMode = .none
     @State private var discountPercentage: Double = 0
     @State private var discountFixedAmount: Double = 0
-    @State private var showPresetNamePrompt = false
-    @State private var pendingPresetName = ""
+    @State private var showExcludingVAT = false
+    @State private var selectedCalculationID: UUID?
+    @State private var calculationName = ""
+    @State private var saveFlash = false
 
     private var currency: FloatingPointFormatStyle<Double>.Currency { mobileCurrency }
 
@@ -28,12 +32,7 @@ struct MobileDechromeView: View {
     }
 
     private var preset: [String: Double] {
-        if let builtIn = dechromePresets[vehicle] { return builtIn }
-        return customPresetStore.presets.first(where: { $0.name == vehicle })?.prices ?? [:]
-    }
-
-    private var isCustomPreset: Bool {
-        customPresetStore.presets.contains(where: { $0.name == vehicle })
+        dechromePresets[vehicle] ?? [:]
     }
 
     private var currentSelectedPriceMap: [String: Double] {
@@ -102,25 +101,14 @@ struct MobileDechromeView: View {
             vehicleLines: requestStore.vehicleInfoLines,
             items: lineItems,
             totalLabel: "TOTAAL incl. BTW",
-            total: dechromeFinalIncludingVAT
+            total: dechromeFinalIncludingVAT,
+            showExcludingVATBreakdown: showExcludingVAT
         )
     }
 
-    private var whatsAppSummaryText: String {
-        var lines = ["Ontchromen\(vehicle == "Vrij samenstellen" ? "" : " – \(vehicle)")"]
-        if selectedParts.isEmpty {
-            lines.append("Nog geen onderdelen geselecteerd.")
-        } else {
-            for name in orderedSelectedParts {
-                lines.append("- \(name): \(price(for: name).formatted(currency))")
-            }
-        }
-        if dechromeDiscount > 0 {
-            lines.append("Korting: -\(dechromeDiscount.formatted(currency))")
-        }
-        lines.append("Totaal: \(dechromeFinalIncludingVAT.formatted(currency)) incl. btw")
-        return lines.joined(separator: "\n")
-    }
+    /// Dezelfde opmaak als de e-mailtekst — zodat beide kopieerknoppen er
+    /// hetzelfde uitzien.
+    private var whatsAppSummaryText: String { emailSummaryText }
 
     private func resetCalculator() {
         vehicle = "Vrij samenstellen"
@@ -135,10 +123,163 @@ struct MobileDechromeView: View {
         discountFixedAmount = 0
     }
 
+    private func loadCalculation(_ id: UUID) {
+        guard let calc = savedStore.calculation(id: id) else { return }
+        selectedCalculationID = calc.id
+        calculationName = calc.name
+        vehicle = "Vrij samenstellen"
+        selectedParts = calc.selectedParts
+        selectedPartOrder = calc.selectedPartOrder
+        manualPrices = calc.manualPrices
+        customParts = calc.customParts
+        discountMode = calc.discountMode
+        discountPercentage = calc.discountPercentage
+        discountFixedAmount = calc.discountFixedAmount
+    }
+
+    private func newCalculation() {
+        resetCalculator()
+        selectedCalculationID = nil
+        calculationName = ""
+    }
+
+    private func saveCurrentCalculation() {
+        selectedCalculationID = savedStore.save(
+            name: calculationName,
+            selectedParts: selectedParts,
+            selectedPartOrder: selectedPartOrder,
+            manualPrices: currentSelectedPriceMap,
+            customParts: customParts,
+            discountMode: discountMode,
+            discountPercentage: discountPercentage,
+            discountFixedAmount: discountFixedAmount,
+            id: selectedCalculationID
+        )
+        if let saved = savedStore.calculation(id: selectedCalculationID) {
+            calculationName = saved.name
+        }
+        withAnimation { saveFlash = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation { saveFlash = false }
+        }
+    }
+
+    private func duplicateCalculation(_ id: UUID) {
+        guard let newID = savedStore.duplicate(id: id) else { return }
+        loadCalculation(newID)
+    }
+
+    private func deleteCalculation(_ id: UUID) {
+        savedStore.delete(id: id)
+        if selectedCalculationID == id {
+            newCalculation()
+        }
+    }
+
     var body: some View {
         List {
             Section {
+                LinkedCustomerPicker(customerStore: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $requestStore.linkedCustomerID)
+            }
+
+            Section {
                 MobileVehicleInfoCard(store: requestStore)
+            }
+
+            Section("Opgeslagen calculaties") {
+                TextField("Naam calculatie", text: $calculationName)
+
+                HStack {
+                    Button {
+                        saveCurrentCalculation()
+                    } label: {
+                        Label("Opslaan", systemImage: "square.and.arrow.down")
+                    }
+                    .disabled(selectedParts.isEmpty)
+
+                    Spacer()
+
+                    Button {
+                        newCalculation()
+                    } label: {
+                        Label("Nieuw", systemImage: "plus")
+                    }
+
+                    if saveFlash {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+                }
+
+                if savedStore.calculations.isEmpty {
+                    Text("Nog geen calculaties opgeslagen.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(savedStore.calculations) { calc in
+                        Button {
+                            loadCalculation(calc.id)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(calc.displayName)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.primary)
+                                    Text(calc.modifiedAt, format: .dateTime.day().month().year())
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Text(calc.total, format: currency)
+                                    .foregroundStyle(.secondary)
+                                if selectedCalculationID == calc.id {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .swipeActions {
+                            Button(role: .destructive) {
+                                deleteCalculation(calc.id)
+                            } label: {
+                                Label("Verwijder", systemImage: "trash")
+                            }
+                            Button {
+                                duplicateCalculation(calc.id)
+                            } label: {
+                                Label("Dupliceer", systemImage: "plus.square.on.square")
+                            }
+                            .tint(.blue)
+                        }
+                        .contextMenu {
+                            Button {
+                                duplicateCalculation(calc.id)
+                            } label: {
+                                Label("Dupliceer", systemImage: "plus.square.on.square")
+                            }
+                            Button(role: .destructive) {
+                                deleteCalculation(calc.id)
+                            } label: {
+                                Label("Verwijder", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+
+                HStack(spacing: 4) {
+                    if savedStore.isSyncing {
+                        ProgressView().controlSize(.small)
+                        Text("Synchroniseren…")
+                    } else if let lastSyncedAt = savedStore.lastSyncedAt {
+                        Image(systemName: "checkmark.icloud")
+                        Text("Gesynchroniseerd \(lastSyncedAt.formatted(date: .omitted, time: .shortened))")
+                    } else {
+                        Image(systemName: "icloud.slash")
+                        Text("Nog niet gesynchroniseerd")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Section("1. Kies auto / preset") {
@@ -150,14 +291,6 @@ struct MobileDechromeView: View {
                             Text(name).tag(name)
                         }
                     }
-
-                    if !customPresetStore.presets.isEmpty {
-                        Section("Mijn presets") {
-                            ForEach(customPresetStore.presets.sorted(by: { $0.name < $1.name })) { item in
-                                Text(item.name).tag(item.name)
-                            }
-                        }
-                    }
                 }
                 .onChange(of: vehicle) { _, newVehicle in
                     manualPrices.removeAll()
@@ -167,40 +300,9 @@ struct MobileDechromeView: View {
                         let names = selectedPreset.keys.sorted()
                         selectedParts = Set(names)
                         selectedPartOrder = names
-                    } else if let selectedPreset = customPresetStore.presets.first(where: { $0.name == newVehicle })?.prices {
-                        let names = selectedPreset.keys.sorted()
-                        selectedParts = Set(names)
-                        selectedPartOrder = names
                     } else {
                         selectedParts.removeAll()
                         selectedPartOrder.removeAll()
-                    }
-                }
-
-                Button {
-                    pendingPresetName = vehicle == "Vrij samenstellen" ? "Nieuwe preset" : "\(vehicle) kopie"
-                    showPresetNamePrompt = true
-                } label: {
-                    Label(vehicle == "Vrij samenstellen" ? "Opslaan als preset" : "Preset kopiëren", systemImage: "plus.square.on.square")
-                }
-
-                if isCustomPreset {
-                    Button {
-                        customPresetStore.update(name: vehicle, prices: currentSelectedPriceMap)
-                    } label: {
-                        Label("Preset bijwerken", systemImage: "square.and.arrow.down")
-                    }
-
-                    Button(role: .destructive) {
-                        let oldVehicle = vehicle
-                        customPresetStore.delete(name: oldVehicle)
-                        vehicle = "Vrij samenstellen"
-                        selectedParts.removeAll()
-                        selectedPartOrder.removeAll()
-                        manualPrices.removeAll()
-                        customParts.removeAll()
-                    } label: {
-                        Label("Verwijder preset", systemImage: "trash")
                     }
                 }
 
@@ -234,7 +336,7 @@ struct MobileDechromeView: View {
                         Label("Toevoegen", systemImage: "plus")
                     }
                 }
-                Text("Je kunt ieder extra onderdeel toevoegen. Daarna kun je de calculatie als nieuwe preset opslaan of je eigen preset bijwerken.")
+                Text("Je kunt ieder extra onderdeel toevoegen. Daarna kun je de calculatie opslaan onder een naam via de kaart hierboven.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -350,8 +452,12 @@ struct MobileDechromeView: View {
                     }
                 }
 
+                Toggle("Toon excl. btw en btw-bedrag bij kopiëren", isOn: $showExcludingVAT)
+                    .font(.caption)
+
                 MobileActionButtons(
                     whatsAppText: { whatsAppSummaryText },
+                    whatsAppPhone: { customerStore.customer(withID: requestStore.linkedCustomerID)?.whatsAppPhone },
                     emailText: { emailSummaryText },
                     addToRequest: {
                         requestStore.add(category: "Ontchromen", items: lineItems, total: dechromeFinalIncludingVAT)
@@ -362,20 +468,30 @@ struct MobileDechromeView: View {
             }
 
             Section {
-                Button("Wis calculator", role: .destructive, action: resetCalculator)
+                Button("Wis calculator", role: .destructive, action: newCalculation)
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.defaultMinListRowHeight, 36)
+        .listSectionSpacing(.compact)
+        .withKeyboardDismiss()
         .navigationTitle("Ontchromen")
-        .alert("Preset opslaan", isPresented: $showPresetNamePrompt) {
-            TextField("Naam preset", text: $pendingPresetName)
-            Button("Annuleer", role: .cancel) {}
-            Button("Opslaan") {
-                let newName = customPresetStore.add(name: pendingPresetName, prices: currentSelectedPriceMap)
-                vehicle = newName
+        .onAppear {
+            // Haalt bij het openen van dit tabblad eerst de laatste stand op —
+            // zodat een wijziging die op de Mac (of elders) is opgeslagen hier
+            // ook verschijnt zonder dat er handmatig op het synchroniseer-
+            // knopje gedrukt hoeft te worden.
+            Task { await savedStore.syncWithCloud() }
+        }
+        .alert("Opslagfout", isPresented: Binding(
+            get: { savedStore.lastError != nil },
+            set: { isPresented in
+                if !isPresented { savedStore.clearError() }
             }
+        )) {
+            Button("OK", role: .cancel) { savedStore.clearError() }
         } message: {
-            Text("Geef deze preset een naam. Je vindt hem daarna onder Mijn presets.")
+            Text(savedStore.lastError ?? "Onbekende fout")
         }
     }
 }

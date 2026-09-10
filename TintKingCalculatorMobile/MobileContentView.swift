@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Gedeelde stijl en onderdelen voor de mobiele schermen
 //
@@ -32,7 +33,7 @@ struct MobileVehicleInfoCard: View {
     @ObservedObject var store: RequestStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Voertuig").font(.headline)
                 Spacer()
@@ -131,19 +132,27 @@ struct MobileDiscountSection: View {
 /// zodat ze goed passen op de smalle iPhone-breedte.
 struct MobileActionButtons: View {
     var whatsAppText: () -> String
+    /// Optioneel: telefoonnummer van de gekoppelde klant, voor als WhatsApp
+    /// direct geopend kan worden in plaats van dat er gekopieerd moet worden.
+    var whatsAppPhone: (() -> String?)? = nil
     var emailText: () -> String
     var addToRequest: () -> Void
     var addDisabled: Bool
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Button {
-                UIPasteboard.general.string = whatsAppText()
+                if let phone = whatsAppPhone?(), let url = WhatsAppLink.url(phone: phone, message: whatsAppText()) {
+                    UIApplication.shared.open(url)
+                } else {
+                    UIPasteboard.general.string = whatsAppText()
+                }
             } label: {
                 Label("Kopieer voor WhatsApp", systemImage: "message.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .controlSize(.small)
 
             Button {
                 UIPasteboard.general.string = emailText()
@@ -152,6 +161,7 @@ struct MobileActionButtons: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .controlSize(.small)
 
             Button {
                 addToRequest()
@@ -160,10 +170,11 @@ struct MobileActionButtons: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.small)
             .tint(.green)
             .disabled(addDisabled)
         }
-        .padding(.top, 4)
+        .padding(.top, 2)
     }
 }
 
@@ -172,7 +183,7 @@ struct MobileMetric: View {
     let title: String
     let value: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(title).font(.caption).foregroundStyle(.secondary)
             Text(value).font(.headline)
         }
@@ -234,72 +245,94 @@ struct MobileContentView: View {
     @StateObject private var measurementStore = MeasurementStore()
     @StateObject private var moneybirdSettings = MoneybirdSettingsStore()
     @StateObject private var productStore = ProductStore()
+    @StateObject private var customerStore = CustomerStore()
+    @StateObject private var supplyStore = SupplyStore()
+    @StateObject private var orderListStore = OrderListStore()
+    @StateObject private var reminderStore = ReminderStore()
+    @ObservedObject private var activityLog = ActivityLogStore.shared
+    @State private var selectedTab: AppTab = .home
+    @State private var selectedCustomerID: UUID?
+    @StateObject private var tabOrderStore = TabOrderStore()
 
     var body: some View {
-        TabView {
-            NavigationStack {
-                MobileMontageView(moneybirdSettings: moneybirdSettings)
-            }
-            .tabItem {
-                Label("Offerte", systemImage: "doc.text")
-            }
-
-            NavigationStack {
-                MobileTintView(requestStore: requestStore, priceListStore: priceListStore)
-            }
-            .tabItem {
-                Label("Tinten", systemImage: "car.side")
-            }
-
-            NavigationStack {
-                MobileDechromeView(requestStore: requestStore, priceListStore: priceListStore)
-            }
-            .tabItem {
-                Label("Ontchromen", systemImage: "sparkles")
-            }
-
-            NavigationStack {
-                ProductListView(store: productStore, requestStore: requestStore)
-            }
-            .tabItem {
-                Label("Producten", systemImage: "shippingbox")
-            }
-
-            NavigationStack {
-                MobileRequestView(store: requestStore, moneybirdSettings: moneybirdSettings)
-            }
-            .tabItem {
-                Label("Aanvraag", systemImage: "cart")
-            }
-
-            NavigationStack {
-                MobileRollCalculatorView()
-            }
-            .tabItem {
-                Label("Rol", systemImage: "ruler")
-            }
-
-            NavigationStack {
-                MobileSnijfolieView(requestStore: requestStore, priceListStore: priceListStore)
-            }
-            .tabItem {
-                Label("Snijfolie", systemImage: "scissors")
-            }
-
-            NavigationStack {
-                MeasureView(store: measurementStore)
-            }
-            .tabItem {
-                Label("Meten", systemImage: "ruler")
-            }
-
-            NavigationStack {
-                PriceListView(store: priceListStore)
-            }
-            .tabItem {
-                Label("Prijslijst", systemImage: "list.bullet.rectangle")
+        TabView(selection: $selectedTab) {
+            ForEach(tabOrderStore.order, id: \.self) { tab in
+                tabContent(for: tab)
+                    .tabItem {
+                        Label(tab.mobileTabTitle, systemImage: tab.mobileTabImage)
+                    }
+                    .tag(tab)
             }
         }
         .tint(.green)
+    }
+
+    /// Geeft het scherm terug dat bij een tabblad hoort. Losgetrokken van de
+    /// vaste volgorde hierboven, zodat de tabbladen zelf herschikbaar zijn via
+    /// TabOrderStore/TabOrderView zonder dat de inhoud per tab hoeft te
+    /// veranderen.
+    @ViewBuilder
+    private func tabContent(for tab: AppTab) -> some View {
+        switch tab {
+        case .home:
+            NavigationStack {
+                HomeView(activityLog: activityLog, selectedTab: $selectedTab, selectedCustomerID: $selectedCustomerID, reminderStore: reminderStore)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            NavigationLink {
+                                TabOrderView(store: tabOrderStore)
+                            } label: {
+                                Image(systemName: "arrow.up.arrow.down")
+                            }
+                        }
+                    }
+            }
+        case .montage:
+            NavigationStack {
+                MobileMontageView(moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+            }
+        case .tint:
+            NavigationStack {
+                MobileTintView(requestStore: requestStore, priceListStore: priceListStore, customerStore: customerStore, moneybirdSettings: moneybirdSettings)
+            }
+        case .dechrome:
+            NavigationStack {
+                MobileDechromeView(requestStore: requestStore, priceListStore: priceListStore, customerStore: customerStore, moneybirdSettings: moneybirdSettings)
+            }
+        case .producten:
+            NavigationStack {
+                ProductListView(store: productStore, requestStore: requestStore)
+            }
+        case .aanvraag:
+            NavigationStack {
+                MobileRequestView(store: requestStore, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
+            }
+        case .roll:
+            NavigationStack {
+                MobileRollCalculatorView()
+            }
+        case .snijfolie:
+            NavigationStack {
+                MobileSnijfolieView(requestStore: requestStore, priceListStore: priceListStore, customerStore: customerStore, moneybirdSettings: moneybirdSettings)
+            }
+        case .meten:
+            NavigationStack {
+                MeasureView(store: measurementStore)
+            }
+        case .prijslijst:
+            NavigationStack {
+                PriceListView(store: priceListStore)
+            }
+        case .klanten:
+            CustomerView(store: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $selectedCustomerID)
+        case .bestellijst:
+            NavigationStack {
+                SupplyView(store: supplyStore, orderListStore: orderListStore)
+            }
+        case .kozijn:
+            NavigationStack {
+                KozijnCalculatorView(customerStore: customerStore, moneybirdSettings: moneybirdSettings)
+            }
+        }
     }
 }

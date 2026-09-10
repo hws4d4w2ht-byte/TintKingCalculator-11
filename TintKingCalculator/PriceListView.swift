@@ -183,6 +183,7 @@ struct PriceListView: View {
             }
             .padding(24)
         }
+        .withKeyboardDismiss()
         .alert("Opslagfout", isPresented: Binding(
             get: { store.lastError != nil },
             set: { isPresented in if !isPresented { store.clearError() } }

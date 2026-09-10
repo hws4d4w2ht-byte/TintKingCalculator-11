@@ -7,6 +7,8 @@ import UIKit
 struct MobileSnijfolieView: View {
     @ObservedObject var requestStore: RequestStore
     @ObservedObject var priceListStore: PriceListStore
+    @ObservedObject var customerStore: CustomerStore
+    @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
 
     @State private var items: [CutFoilLineItem] = []
     @State private var discountMode: DiscountMode = .none
@@ -124,6 +126,10 @@ struct MobileSnijfolieView: View {
 
     var body: some View {
         List {
+            Section {
+                LinkedCustomerPicker(customerStore: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $requestStore.linkedCustomerID)
+            }
+
             Section {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -337,6 +343,7 @@ struct MobileSnijfolieView: View {
 
                 MobileActionButtons(
                     whatsAppText: { whatsAppSummaryText },
+                    whatsAppPhone: { customerStore.customer(withID: requestStore.linkedCustomerID)?.whatsAppPhone },
                     emailText: { emailSummaryText },
                     addToRequest: {
                         requestStore.add(category: "Snijfolie", items: lineItems, total: finalIncludingVAT)
@@ -351,6 +358,9 @@ struct MobileSnijfolieView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.defaultMinListRowHeight, 36)
+        .listSectionSpacing(.compact)
+        .withKeyboardDismiss()
         .navigationTitle("Snijfolie")
         .sheet(isPresented: $showSettings) {
             NavigationStack {

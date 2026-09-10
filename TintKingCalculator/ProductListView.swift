@@ -134,6 +134,7 @@ struct ProductListView: View {
             mobileLayout
             #endif
         }
+        .withKeyboardDismiss()
         .sheet(isPresented: $showSettingsSheet) {
             settingsSheet
         }
@@ -291,6 +292,7 @@ struct ProductListView: View {
             .padding(20)
         }
         .frame(minWidth: 420, minHeight: 420)
+        .withKeyboardDismiss()
     }
 
     /// Bewerker voor de submenu-groepen van een product: elke rij is één
@@ -443,6 +445,7 @@ struct ProductListView: View {
     private var macLayout: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            syncStatusRow
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 10) {
                     if groupedProducts.count > 1 {
@@ -461,7 +464,7 @@ struct ProductListView: View {
                     addProductCard
                     selectionSummaryCard
                 }
-                .frame(width: 300, alignment: .top)
+                .frame(width: 460, alignment: .top)
             }
         }
         .padding(18)
@@ -470,8 +473,9 @@ struct ProductListView: View {
 
     private var mobileLayout: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 header
+                syncStatusRow
                 addProductCard
 
                 if !selectedItems.isEmpty {
@@ -484,7 +488,7 @@ struct ProductListView: View {
 
                 productListContent
             }
-            .padding(20)
+            .padding(16)
         }
     }
 
@@ -540,6 +544,36 @@ struct ProductListView: View {
         }
     }
 
+    /// Synchronisatiestatus + handmatige "Synchroniseer nu"-knop, in dezelfde
+    /// stijl als bij Prijslijst en Projecten — nieuwe producten worden ook
+    /// automatisch gesynchroniseerd zodra je ze toevoegt/wijzigt, maar het
+    /// andere apparaat ziet dat pas vanzelf bij het (opnieuw) openen van de
+    /// app. Met deze knop kun je dat ook meteen forceren, zonder de app
+    /// opnieuw te hoeven starten.
+    private var syncStatusRow: some View {
+        HStack(spacing: 6) {
+            if store.isSyncing {
+                ProgressView().controlSize(.small)
+                Text("Synchroniseren…")
+            } else if let lastSyncedAt = store.lastSyncedAt {
+                Image(systemName: "checkmark.icloud")
+                Text("Gesynchroniseerd \(lastSyncedAt.formatted(date: .omitted, time: .shortened))")
+            } else {
+                Image(systemName: "icloud.slash")
+                Text("Nog niet gesynchroniseerd")
+            }
+            Spacer()
+            Button {
+                Task { await store.syncWithCloud() }
+            } label: {
+                Label("Synchroniseer nu", systemImage: "arrow.triangle.2.circlepath")
+            }
+            .buttonStyle(.borderless)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+
     /// Inhoud van het instellingen-sheet (tandwiel-knop): import/export, uit
     /// het zicht van de gewone productenlijst om die rustiger te houden.
     private var settingsSheet: some View {
@@ -555,6 +589,7 @@ struct ProductListView: View {
         }
         .padding(20)
         .frame(minWidth: 380, minHeight: 320)
+        .withKeyboardDismiss()
     }
 
     private var submenuConfiguratorCard: some View {
@@ -634,6 +669,7 @@ struct ProductListView: View {
         }
         .padding(20)
         .frame(minWidth: 440, minHeight: 500)
+        .withKeyboardDismiss()
     }
 
     private func resetSharedGroupDraft() {
@@ -893,8 +929,8 @@ struct ProductListView: View {
                 newProductExtraFields
             }
             #else
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
                     TextField("Naam, bijv. Lampenfolie geel", text: $newName)
                         .textFieldStyle(.roundedBorder)
                     categoryPicker(selection: $newCategory)
@@ -928,25 +964,18 @@ struct ProductListView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
+                // Notitie wordt hier bewust niet meer los ingevoerd — die
+                // pas je toch pas aan zodra het in de Aanvraag staat (via het
+                // potlood-icoontje daar). Bij het toevoegen aan de aanvraag
+                // gaat een eventuele productomschrijving nog wel automatisch
+                // mee als notitie, net als voorheen.
                 ForEach(selectedLines) { line in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(alignment: .top) {
-                            Text(line.quantity > 1 ? "\(line.product.name) ×\(line.quantity)" : line.product.name)
-                            Spacer()
-                            Text(line.product.price * Double(line.quantity), format: currency)
-                        }
-                        .font(.subheadline)
-
-                        TextField(
-                            "Notitie, bijv. kenteken of kleur folie",
-                            text: Binding(
-                                get: { notes[line.product.id] ?? "" },
-                                set: { notes[line.product.id] = $0 }
-                            )
-                        )
-                        .textFieldStyle(.roundedBorder)
-                        .font(.caption)
+                    HStack(alignment: .top) {
+                        Text(line.quantity > 1 ? "\(line.product.name) ×\(line.quantity)" : line.product.name)
+                        Spacer()
+                        Text(line.product.price * Double(line.quantity), format: currency)
                     }
+                    .font(.subheadline)
                     .padding(.bottom, 2)
                 }
                 Divider()
@@ -982,70 +1011,64 @@ struct ProductListView: View {
         .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    /// Aantal-selector per product: een simpele "+"-knop om er één bij te
-    /// tellen (i.p.v. een Stepper met kleine op/neer-pijltjes), met een
-    /// "−"-knop en het aantal die alleen verschijnen zodra er iets is
-    /// geselecteerd.
+    /// Aantal instellen — via de "+"/"−"-knoppen voor een enkel stapje, of
+    /// door rechtstreeks een getal in te typen in het veld (handig om in één
+    /// keer een groot aantal toe te voegen, i.p.v. tientallen keren op "+" te
+    /// tikken). Zet het aantal bij 0 of minder weer helemaal uit, en vult bij
+    /// de eerste keer selecteren automatisch de productomschrijving als
+    /// notitie in, net als voorheen.
+    private func setQuantity(for product: ProductItem, to newValue: Int) {
+        let wasUnselected = (quantities[product.id] ?? 0) == 0
+        if newValue <= 0 {
+            quantities[product.id] = nil
+        } else {
+            quantities[product.id] = newValue
+            if wasUnselected, (notes[product.id] ?? "").isEmpty, !product.description.isEmpty {
+                notes[product.id] = product.description
+            }
+        }
+    }
+
+    /// Aantal-selector per product: een intypbaar aantal-veld (voor in één
+    /// keer een groot aantal toevoegen) plus een "+"-knop, met een
+    /// "−"-knop die alleen verschijnt zodra er iets is geselecteerd.
     @ViewBuilder
     private func quantityControl(for product: ProductItem) -> some View {
+        let qty = quantities[product.id] ?? 0
         HStack(spacing: 6) {
-            if let qty = quantities[product.id], qty > 0 {
+            if qty > 0 {
                 Button {
-                    quantities[product.id] = qty > 1 ? qty - 1 : nil
+                    setQuantity(for: product, to: qty - 1)
                 } label: {
                     Image(systemName: "minus.circle")
                 }
                 .buttonStyle(.borderless)
-
-                Text("\(qty)×")
-                    .monospacedDigit()
-                    .frame(minWidth: 20, alignment: .trailing)
             }
 
+            AppNumberField(
+                placeholder: "0",
+                value: Binding(
+                    get: { Double(qty) },
+                    set: { setQuantity(for: product, to: Int($0.rounded())) }
+                ),
+                decimals: 0...0
+            )
+            .multilineTextAlignment(.trailing)
+            .frame(width: 34)
+
             Button {
-                let wasUnselected = (quantities[product.id] ?? 0) == 0
-                quantities[product.id] = (quantities[product.id] ?? 0) + 1
-                if wasUnselected, (notes[product.id] ?? "").isEmpty, !product.description.isEmpty {
-                    notes[product.id] = product.description
-                }
+                setQuantity(for: product, to: qty + 1)
             } label: {
                 Image(systemName: "plus.circle.fill")
             }
             .buttonStyle(.borderless)
         }
-        .frame(minWidth: 70, alignment: .trailing)
+        .frame(minWidth: 92, alignment: .trailing)
     }
 
     @ViewBuilder
     private func productRow(_ product: ProductItem) -> some View {
         HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 6) {
-                    Text(product.name)
-                    Text(product.price, format: currency)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .lineLimit(1)
-
-                if !product.description.isEmpty {
-                    Text(product.description)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer(minLength: 8)
-
-            if !product.variantGroups.isEmpty {
-                HStack(spacing: 4) {
-                    ForEach(product.variantGroups) { group in
-                        variantGroupMenu(product: product, group: group)
-                    }
-                }
-            }
-
             quantityControl(for: product)
 
             Button {
@@ -1066,6 +1089,31 @@ struct ProductListView: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
+
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 6) {
+                    Text(product.name)
+                    Text(product.price, format: currency)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .lineLimit(1)
+
+                if !product.description.isEmpty {
+                    Text(product.description)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            if !product.variantGroups.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(product.variantGroups) { group in
+                        variantGroupMenu(product: product, group: group)
+                    }
+                }
+            }
         }
         .padding(.vertical, 2)
     }

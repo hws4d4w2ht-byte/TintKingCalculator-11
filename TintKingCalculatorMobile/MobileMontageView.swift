@@ -31,11 +31,24 @@ private struct MobileSettingsSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                MobileCurrencyField(title: "Uurtarief werk", value: $settings.hourlyRate)
-                MobileCurrencyField(title: "Reistijd per uur", value: $settings.travelHourlyRate)
-                MobileCurrencyField(title: "Kilometertarief", value: $settings.kmRate)
-                MobilePercentageField(title: "Spoedopslag", value: $settings.rushPercentage)
+                Section("Tarieven") {
+                    MobileCurrencyField(title: "Uurtarief werk", value: $settings.hourlyRate)
+                    MobileCurrencyField(title: "Reistijd per uur", value: $settings.travelHourlyRate)
+                    MobileCurrencyField(title: "Kilometertarief", value: $settings.kmRate)
+                    MobilePercentageField(title: "Spoedopslag", value: $settings.rushPercentage)
+                }
+                Section("Moeilijkheidsopslag") {
+                    MobilePercentageField(title: "Normaal", value: $settings.difficultyNormalPercentage)
+                    MobilePercentageField(title: "Lastig", value: $settings.difficultyHardPercentage)
+                    MobilePercentageField(title: "Zeer lastig", value: $settings.difficultyVeryHardPercentage)
+                }
+                Section("Risico-opslag") {
+                    MobilePercentageField(title: "Laag", value: $settings.riskLowPercentage)
+                    MobilePercentageField(title: "Normaal", value: $settings.riskNormalPercentage)
+                    MobilePercentageField(title: "Hoog", value: $settings.riskHighPercentage)
+                }
             }
+            .withKeyboardDismiss()
             .navigationTitle("Instellingen")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -50,6 +63,7 @@ private struct MobileSettingsSheet: View {
 struct MobileMontageView: View {
     @StateObject private var store = ProjectStore()
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
+    @ObservedObject var customerStore: CustomerStore
     @State private var searchText = ""
 
     private var currency: FloatingPointFormatStyle<Double>.Currency { mobileCurrency }
@@ -78,7 +92,7 @@ struct MobileMontageView: View {
             } else {
                 ForEach(filteredProjects) { project in
                     NavigationLink {
-                        MobileMontageEditorView(store: store, projectID: project.id, moneybirdSettings: moneybirdSettings)
+                        MobileMontageEditorView(store: store, projectID: project.id, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
                     } label: {
                         MobileProjectRow(project: project, currency: currency)
                     }
@@ -112,7 +126,15 @@ struct MobileMontageView: View {
             }
         }
         .searchable(text: $searchText, prompt: "Zoek klant of project")
+        .withKeyboardDismiss()
         .navigationTitle("Offerte / montage")
+        .onAppear {
+            // Haalt bij het openen van dit tabblad eerst de laatste stand op —
+            // zodat een wijziging die op de Mac (of elders) is opgeslagen hier
+            // ook verschijnt zonder dat er handmatig op het synchroniseer-
+            // knopje gedrukt hoeft te worden.
+            Task { await store.syncWithCloud() }
+        }
         .safeAreaInset(edge: .bottom) {
             HStack(spacing: 6) {
                 if store.isSyncing {
@@ -144,7 +166,7 @@ struct MobileMontageView: View {
             }
             ToolbarItem {
                 NavigationLink {
-                    MobileMontageEditorView(store: store, projectID: nil, moneybirdSettings: moneybirdSettings)
+                    MobileMontageEditorView(store: store, projectID: nil, moneybirdSettings: moneybirdSettings, customerStore: customerStore)
                 } label: {
                     Label("Nieuw", systemImage: "plus")
                 }
@@ -168,6 +190,7 @@ struct MobileMontageView: View {
 struct MobileMontageEditorView: View {
     @ObservedObject var store: ProjectStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
+    @ObservedObject var customerStore: CustomerStore
     @State private var projectID: UUID?
     @State private var input: CalculationInput
     @State private var settings: CalculatorSettings
@@ -184,9 +207,10 @@ struct MobileMontageEditorView: View {
     @State private var moneybirdExportSucceeded = false
     @State private var showMoneybirdResult = false
 
-    init(store: ProjectStore, projectID: UUID?, moneybirdSettings: MoneybirdSettingsStore) {
+    init(store: ProjectStore, projectID: UUID?, moneybirdSettings: MoneybirdSettingsStore, customerStore: CustomerStore) {
         self.store = store
         self.moneybirdSettings = moneybirdSettings
+        self.customerStore = customerStore
         _projectID = State(initialValue: projectID)
         if let projectID, let project = store.project(id: projectID) {
             _input = State(initialValue: project.input)
@@ -233,11 +257,16 @@ struct MobileMontageEditorView: View {
         return String(format: "%.1f", value).replacingOccurrences(of: ".", with: ",")
     }
 
+    // Montage wordt vrijwel altijd zakelijk gebruikt, dus de regels in de
+    // offertetekst/WhatsApp/Moneybird-export staan hier — anders dan bij de
+    // klantgerichte calculators (Tinten, Ontchromen, enz.) — bewust excl. btw
+    // in plaats van incl. btw; de btw komt alleen nog terug in de laatste
+    // drie regels van de opbouw (excl. → btw → incl.).
     private var simpleLineItems: [QuoteItem] {
         let title = input.projectName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Montagewerk op locatie" : input.projectName
-        var items = [QuoteItem(name: title, price: includingVAT(fromExcludingVAT: montagePriceBeforeDiscountExclVAT))]
+        var items = [QuoteItem(name: title, price: montagePriceBeforeDiscountExclVAT)]
         if montageDiscountExclVAT > 0 {
-            items.append(QuoteItem(name: "Korting", price: -includingVAT(fromExcludingVAT: montageDiscountExclVAT)))
+            items.append(QuoteItem(name: "Korting", price: -montageDiscountExclVAT))
         }
         return items
     }
@@ -285,9 +314,9 @@ struct MobileMontageEditorView: View {
     }
 
     private var detailedLineItems: [QuoteItem] {
-        var items = detailedLineItemsExclVAT.map { QuoteItem(name: $0.name, price: includingVAT(fromExcludingVAT: $0.amount)) }
+        var items = detailedLineItemsExclVAT.map { QuoteItem(name: $0.name, price: $0.amount) }
         if montageDiscountExclVAT > 0 {
-            items.append(QuoteItem(name: "Korting", price: -includingVAT(fromExcludingVAT: montageDiscountExclVAT)))
+            items.append(QuoteItem(name: "Korting", price: -montageDiscountExclVAT))
         }
         return items
     }
@@ -301,35 +330,66 @@ struct MobileMontageEditorView: View {
             vehicleLines: vehicleInfoLines,
             items: lineItems,
             totalLabel: "TOTAAL incl. BTW",
-            total: montageFinalInclVAT
+            total: montageFinalInclVAT,
+            itemsExcludeVAT: true
         )
     }
 
     /// Alleen omschrijving + bedrag per regel, voor de Moneybird-export.
     /// Geen klant- of btw-logica hier: dat doet Robin zelf na in Moneybird.
     private var moneybirdLines: [MoneybirdExportService.EstimateLine] {
-        // De prijzen in lineItems zijn incl. btw (voor de klantweergave). Moneybird
-        // telt zelf automatisch 21% btw op bij een regel, dus hier excl. btw
-        // aanleveren — anders wordt de btw twee keer gerekend.
-        lineItems.map { MoneybirdExportService.EstimateLine(description: $0.name, price: excludingVAT(fromIncludingVAT: $0.price)) }
+        // De prijzen in lineItems staan hier (Montage) al excl. btw. Moneybird
+        // telt zelf automatisch 21% btw op bij een regel, dus niet nogmaals
+        // converteren — anders wordt de btw dubbel gerekend.
+        lineItems.map { MoneybirdExportService.EstimateLine(description: $0.name, price: $0.price) }
     }
 
-    private func exportToMoneybird() {
+    private var linkedCustomer: Customer? {
+        guard let linkedCustomerID = input.linkedCustomerID else { return nil }
+        return customerStore.customers.first { $0.id == linkedCustomerID }
+    }
+
+    private var linkedContactId: String? {
+        linkedCustomer?.moneybirdContact?.id
+    }
+
+    private var exportTargetName: String {
+        linkedCustomer?.name.isEmpty == false ? linkedCustomer!.name : "App klant"
+    }
+
+    private func exportToMoneybird(asInvoice: Bool) {
         guard moneybirdSettings.isConfigured else {
             showMoneybirdSettings = true
             return
         }
         isExportingToMoneybird = true
         let lines = moneybirdLines
+        let contactId = linkedContactId
+        let targetName = exportTargetName
         Task {
             do {
-                let result = try await MoneybirdExportService.exportEstimate(lines: lines, settings: moneybirdSettings)
-                if let draftNumber = result.draftNumber {
-                    moneybirdResultMessage = "Concept-offerte #\(draftNumber) aangemaakt in Moneybird bij klant \"App klant\"."
+                if asInvoice {
+                    let result = try await MoneybirdExportService.exportInvoice(lines: lines, settings: moneybirdSettings, contactId: contactId)
+                    if let draftNumber = result.draftNumber {
+                        moneybirdResultMessage = "Conceptfactuur #\(draftNumber) aangemaakt in Moneybird bij klant \"\(targetName)\"."
+                    } else {
+                        moneybirdResultMessage = "Conceptfactuur aangemaakt in Moneybird bij klant \"\(targetName)\"."
+                    }
                 } else {
-                    moneybirdResultMessage = "Concept-offerte aangemaakt in Moneybird bij klant \"App klant\"."
+                    let result = try await MoneybirdExportService.exportEstimate(lines: lines, settings: moneybirdSettings, contactId: contactId)
+                    if let draftNumber = result.draftNumber {
+                        moneybirdResultMessage = "Concept-offerte #\(draftNumber) aangemaakt in Moneybird bij klant \"\(targetName)\"."
+                    } else {
+                        moneybirdResultMessage = "Concept-offerte aangemaakt in Moneybird bij klant \"\(targetName)\"."
+                    }
                 }
                 moneybirdExportSucceeded = true
+                ActivityLogStore.shared.log(
+                    asInvoice ? "Factuur verstuurd naar \(targetName)" : "Offerte verstuurd naar \(targetName)",
+                    systemImage: "arrow.up.doc",
+                    tab: .montage,
+                    customerID: linkedCustomer?.id
+                )
             } catch {
                 moneybirdResultMessage = error.localizedDescription
                 moneybirdExportSucceeded = false
@@ -341,7 +401,9 @@ struct MobileMontageEditorView: View {
 
     private var whatsAppQuoteText: String {
         var lines = lineItems.map { "\($0.name): \($0.price.formatted(currency))" }
-        lines.append("Totaal: \(montageFinalInclVAT.formatted(currency)) incl. btw")
+        lines.append("Subtotaal excl. btw: \(montageFinalExclVAT.formatted(currency))")
+        lines.append("Btw (21%): \((montageFinalInclVAT - montageFinalExclVAT).formatted(currency))")
+        lines.append("Totaal incl. btw: \(montageFinalInclVAT.formatted(currency))")
         return lines.joined(separator: "\n")
     }
 
@@ -377,6 +439,7 @@ struct MobileMontageEditorView: View {
         List {
             Section("Project") {
                 TextField("Klant / project / omschrijving", text: $input.projectName)
+                LinkedCustomerPicker(customerStore: customerStore, moneybirdSettings: moneybirdSettings, selectedCustomerID: $input.linkedCustomerID)
                 if let selectedProject = store.project(id: projectID) {
                     LabeledContent("Laatst gewijzigd") {
                         Text(selectedProject.modifiedAt, format: .dateTime.day().month().year().hour().minute())
@@ -535,12 +598,12 @@ struct MobileMontageEditorView: View {
                 HStack {
                     Text("Moeilijkheid")
                     Spacer()
-                    Text("× \(input.difficulty.factor.formatted(.number.precision(.fractionLength(2))))")
+                    Text("× \(input.difficulty.factor(in: settings).formatted(.number.precision(.fractionLength(2))))")
                 }
                 HStack {
                     Text("Risico-opslag")
                     Spacer()
-                    Text(input.risk.percentage, format: .percent)
+                    Text(input.risk.percentage(in: settings), format: .percent)
                 }
                 if input.rush {
                     HStack {
@@ -555,11 +618,15 @@ struct MobileMontageEditorView: View {
                 Toggle("Uitgesplitst (materialen, uren, hoogwerker, enz.)", isOn: $showDetailedBreakdown)
 
                 Text(quoteText)
-                    .font(.callout)
+                    .font(.system(.callout, design: .monospaced))
                     .padding(.vertical, 4)
 
                 Button {
-                    UIPasteboard.general.string = whatsAppQuoteText
+                    if let phone = linkedCustomer?.whatsAppPhone, let url = WhatsAppLink.url(phone: phone, message: whatsAppQuoteText) {
+                        UIApplication.shared.open(url)
+                    } else {
+                        UIPasteboard.general.string = whatsAppQuoteText
+                    }
                 } label: {
                     Label("Kopieer voor WhatsApp", systemImage: "message.fill")
                         .frame(maxWidth: .infinity)
@@ -575,13 +642,27 @@ struct MobileMontageEditorView: View {
                 .buttonStyle(.bordered)
 
                 Button {
-                    exportToMoneybird()
+                    exportToMoneybird(asInvoice: false)
                 } label: {
                     if isExportingToMoneybird {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     } else {
-                        Label("Exporteer naar Moneybird", systemImage: "arrow.up.doc")
+                        Label("Offerte naar Moneybird", systemImage: "arrow.up.doc")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(isExportingToMoneybird)
+
+                Button {
+                    exportToMoneybird(asInvoice: true)
+                } label: {
+                    if isExportingToMoneybird {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Label("Factuur naar Moneybird", systemImage: "doc.text.fill")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -598,6 +679,9 @@ struct MobileMontageEditorView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.defaultMinListRowHeight, 36)
+        .listSectionSpacing(.compact)
+        .withKeyboardDismiss()
         .navigationTitle(input.projectName.isEmpty ? "Nieuwe calculatie" : input.projectName)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {

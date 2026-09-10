@@ -121,12 +121,20 @@ struct MoneybirdEstimateResult {
     let viewURL: URL?
 }
 
-/// Stuurt een concept-offerte (alleen omschrijving + bedrag per regel) naar
-/// Moneybird, gekoppeld aan de vaste placeholder-klant. Btw-tarief en
-/// grootboekrekening laten we bewust leeg: Moneybird vult daar automatisch
-/// de standaardinstelling van de administratie voor in (in de praktijk 21%
-/// btw), en jij koppelt de echte klant en controleert de btw zelf na in
-/// Moneybird — precies zoals afgesproken.
+/// Zelfde soort resultaat, maar dan voor een concept-factuur.
+struct MoneybirdInvoiceResult {
+    /// Het (interne) Moneybird-conceptnummer, zoals getoond in de lijst met concepten.
+    let draftNumber: Int?
+    /// Publieke weergavelink van de factuur (zoals een klant 'm zou zien).
+    let viewURL: URL?
+}
+
+/// Stuurt een concept-offerte of -factuur (alleen omschrijving + bedrag per
+/// regel) naar Moneybird, gekoppeld aan de vaste placeholder-klant.
+/// Btw-tarief en grootboekrekening laten we bewust leeg: Moneybird vult daar
+/// automatisch de standaardinstelling van de administratie voor in (in de
+/// praktijk 21% btw), en jij koppelt de echte klant en controleert de btw
+/// zelf na in Moneybird — precies zoals afgesproken.
 enum MoneybirdExportService {
     struct EstimateLine {
         var description: String
@@ -136,13 +144,23 @@ enum MoneybirdExportService {
     /// Rondt af op hele centen voordat het bedrag naar Moneybird gaat.
     /// Zonder dit kan een deling zoals "excl. btw" (bedrag / 1,21) een lange,
     /// niet-afgeronde kommagetal opleveren (bijv. 595,041322314...), dat
-    /// Moneybird dan letterlijk zo overneemt in de offerte.
+    /// Moneybird dan letterlijk zo overneemt in de offerte/factuur.
     private static func roundedPrice(_ value: Double) -> Double {
         (value * 100).rounded() / 100
     }
 
+    /// Gedeelde POST-logica voor zowel offertes (`estimates.json`,
+    /// sleutel "estimate") als facturen (`sales_invoices.json`, sleutel
+    /// "sales_invoice") — Moneybird's API voor beide documenten is verder
+    /// identiek opgebouwd.
     @MainActor
-    static func exportEstimate(lines: [EstimateLine], settings: MoneybirdSettingsStore) async throws -> MoneybirdEstimateResult {
+    private static func postDocument(
+        endpointPath: String,
+        bodyKey: String,
+        lines: [EstimateLine],
+        settings: MoneybirdSettingsStore,
+        contactId: String? = nil
+    ) async throws -> (draftNumber: Int?, viewURL: URL?) {
         guard settings.isConfigured else {
             throw MoneybirdExportError.notConfigured
         }
@@ -150,16 +168,20 @@ enum MoneybirdExportService {
             throw MoneybirdExportError.invalidResponse
         }
 
-        guard let url = URL(string: "https://moneybird.com/api/v2/\(settings.administrationId)/estimates.json") else {
+        guard let url = URL(string: "https://moneybird.com/api/v2/\(settings.administrationId)/\(endpointPath)") else {
             throw MoneybirdExportError.invalidResponse
         }
 
         let details = lines.map { line -> [String: Any] in
             ["description": line.description, "price": Self.roundedPrice(line.price), "amount": "1"]
         }
+        // Een gekoppelde klant (via Klantgegevens) gaat naar diens eigen
+        // Moneybird-contact; zonder koppeling valt het terug op de vaste
+        // placeholder-klant "App klant", zoals voorheen.
+        let resolvedContactId = (contactId?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? settings.placeholderContactId
         let body: [String: Any] = [
-            "estimate": [
-                "contact_id": settings.placeholderContactId,
+            bodyKey: [
+                "contact_id": resolvedContactId,
                 "details_attributes": details
             ]
         ]
@@ -197,7 +219,98 @@ enum MoneybirdExportService {
 
         let draftNumber = json["draft_id"] as? Int
         let viewURL = (json["url"] as? String).flatMap(URL.init(string:))
-        return MoneybirdEstimateResult(draftNumber: draftNumber, viewURL: viewURL)
+        return (draftNumber, viewURL)
+    }
+
+    @MainActor
+    static func exportEstimate(lines: [EstimateLine], settings: MoneybirdSettingsStore, contactId: String? = nil) async throws -> MoneybirdEstimateResult {
+        let result = try await postDocument(endpointPath: "estimates.json", bodyKey: "estimate", lines: lines, settings: settings, contactId: contactId)
+        return MoneybirdEstimateResult(draftNumber: result.draftNumber, viewURL: result.viewURL)
+    }
+
+    /// Zelfde als `exportEstimate`, maar dan als concept-factuur
+    /// (`sales_invoices.json`) in plaats van een concept-offerte.
+    @MainActor
+    static func exportInvoice(lines: [EstimateLine], settings: MoneybirdSettingsStore, contactId: String? = nil) async throws -> MoneybirdInvoiceResult {
+        let result = try await postDocument(endpointPath: "sales_invoices.json", bodyKey: "sales_invoice", lines: lines, settings: settings, contactId: contactId)
+        return MoneybirdInvoiceResult(draftNumber: result.draftNumber, viewURL: result.viewURL)
+    }
+
+    /// Zoekt klanten op in Moneybird op naam/adres/e-mail, voor het koppelen
+    /// van een klant in de Klantgegevens-sectie aan zijn echte Moneybird-klant.
+    /// Gebruikt dezelfde API-token/administratie als de offerte/factuur-export,
+    /// maar heeft de placeholder-klant niet nodig (alleen lezen).
+    @MainActor
+    static func searchContacts(query: String, settings: MoneybirdSettingsStore) async throws -> [MoneybirdContactLink] {
+        guard !settings.apiToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !settings.administrationId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw MoneybirdExportError.notConfigured
+        }
+        guard var components = URLComponents(string: "https://moneybird.com/api/v2/\(settings.administrationId)/contacts.json") else {
+            throw MoneybirdExportError.invalidResponse
+        }
+        components.queryItems = [
+            URLQueryItem(name: "query", value: query),
+            URLQueryItem(name: "per_page", value: "25")
+        ]
+        guard let url = components.url else {
+            throw MoneybirdExportError.invalidResponse
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(settings.apiToken)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw MoneybirdExportError.network(error)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw MoneybirdExportError.invalidResponse
+        }
+        if httpResponse.statusCode == 401 {
+            throw MoneybirdExportError.unauthorized
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = String(data: data, encoding: .utf8) ?? "onbekende fout"
+            throw MoneybirdExportError.server(httpResponse.statusCode, message)
+        }
+
+        guard let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            throw MoneybirdExportError.invalidResponse
+        }
+
+        return array.compactMap { dict -> MoneybirdContactLink? in
+            let id: String
+            if let stringId = dict["id"] as? String {
+                id = stringId
+            } else if let numberId = dict["id"] as? NSNumber {
+                id = numberId.stringValue
+            } else {
+                return nil
+            }
+
+            let company = (dict["company_name"] as? String) ?? ""
+            let firstname = (dict["firstname"] as? String) ?? ""
+            let lastname = (dict["lastname"] as? String) ?? ""
+            let personName = [firstname, lastname].filter { !$0.isEmpty }.joined(separator: " ")
+            let name = !company.trimmingCharacters(in: .whitespaces).isEmpty ? company : (personName.isEmpty ? "Naamloos" : personName)
+
+            let email = (dict["email"] as? String) ?? ""
+            let phone = (dict["phone"] as? String) ?? ""
+            let address1 = (dict["address1"] as? String) ?? ""
+            let zipcode = (dict["zipcode"] as? String) ?? ""
+            let city = (dict["city"] as? String) ?? ""
+            let addressParts = [address1, [zipcode, city].filter { !$0.isEmpty }.joined(separator: " ")]
+                .filter { !$0.isEmpty }
+            let address = addressParts.joined(separator: ", ")
+
+            return MoneybirdContactLink(id: id, name: name, email: email, phone: phone, address: address)
+        }
     }
 
     /// Lichte test: haalt de administraties op die bij dit token horen. Geeft
@@ -288,7 +401,7 @@ struct MoneybirdSettingsView: View {
                 }
 
                 GroupBox("Waar komt een export terecht") {
-                    Text("Elke geëxporteerde offerte komt als concept binnen bij de vaste klant \"App klant\" in je Moneybird-administratie, met alleen de omschrijvingen en bedragen ingevuld. Jij koppelt 'm daarna zelf aan de echte klant, controleert de btw, en verstuurt de offerte zelf vanuit Moneybird.")
+                    Text("Elke geëxporteerde offerte of factuur komt als concept binnen bij de vaste klant \"App klant\" in je Moneybird-administratie, met alleen de omschrijvingen en bedragen ingevuld. Jij koppelt 'm daarna zelf aan de echte klant, controleert de btw, en verstuurt 'm zelf vanuit Moneybird.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

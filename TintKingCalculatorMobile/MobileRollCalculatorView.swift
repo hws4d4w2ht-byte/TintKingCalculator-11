@@ -92,6 +92,9 @@ struct MobileRollCalculatorView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.defaultMinListRowHeight, 36)
+        .listSectionSpacing(.compact)
+        .withKeyboardDismiss()
         .navigationTitle("Rolcalculator")
     }
 

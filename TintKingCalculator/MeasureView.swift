@@ -67,6 +67,7 @@ struct MeasureView: View {
                 }
             }
         }
+        .withKeyboardDismiss()
         .navigationTitle("Meten")
         .navigationDestination(for: MeasurementProjectRoute.self) { route in
             MeasurementProjectDetailView(store: store, projectID: route.id)
@@ -163,6 +164,7 @@ struct MeasurementProjectDetailView: View {
                 }
             }
         }
+        .withKeyboardDismiss()
         .navigationTitle(project?.displayName ?? "Klus")
         .navigationDestination(for: MeasurementPhotoRoute.self) { route in
             if let project, let photo = project.photos.first(where: { $0.id == route.id }) {
@@ -349,6 +351,7 @@ struct MeasurementPhotoReorderSheet: View {
                     store.movePhotos(projectID: projectID, from: indices, to: newOffset)
                 }
             }
+            .withKeyboardDismiss()
             .navigationTitle("Foto's herschikken")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -404,6 +407,7 @@ struct MeasurementArrowEditorSheet: View {
                     }
                 }
             }
+            .withKeyboardDismiss()
             .navigationTitle(isEditingExisting ? "Maat aanpassen" : "Maat invoeren")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -495,6 +499,7 @@ struct MeasurementAnnotationView: View {
             }
             .allowsHitTesting(false)
         }
+        .withKeyboardDismiss()
         .navigationTitle("Maat intekenen")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
