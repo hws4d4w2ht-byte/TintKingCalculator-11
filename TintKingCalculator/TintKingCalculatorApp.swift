@@ -2,6 +2,10 @@ import SwiftUI
 
 @main
 struct TintKingCalculatorApp: App {
+    init() {
+        CloudSyncMigration.resetLocalSyncBookkeepingIfNeeded()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
