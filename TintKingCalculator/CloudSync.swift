@@ -56,6 +56,25 @@ final class CloudSyncCenter {
 
     private init() {}
 
+    /// Haalt zo veel mogelijk bruikbare details uit een CloudKit-fout, in
+    /// plaats van alleen de vage standaardtekst ("The operation couldn't be
+    /// completed") — zodat een foutmelding in de app ook echt zegt wat er
+    /// aan de hand is.
+    private func diagnosticText(for error: Error) -> String {
+        guard let ckError = error as? CKError else { return error.localizedDescription }
+        var parts = ["\(ckError.localizedDescription) (code \(ckError.code.rawValue))"]
+        if let reason = ckError.userInfo[NSLocalizedFailureReasonErrorKey] as? String {
+            parts.append("Reden: \(reason)")
+        }
+        if let underlying = ckError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            parts.append("Onderliggend: \(underlying.localizedDescription) (\(underlying.domain) \(underlying.code))")
+        }
+        if let serverMessage = ckError.userInfo["ServerErrorDescription"] as? String {
+            parts.append("Server: \(serverMessage)")
+        }
+        return parts.joined(separator: " — ")
+    }
+
     /// Of iCloud op dit moment bruikbaar is (ingelogd op dit apparaat, geen
     /// beperkingen zoals Schermtijd/ouderlijk toezicht, etc.).
     var isAccountAvailable: Bool {
@@ -67,7 +86,7 @@ final class CloudSyncCenter {
                 }
                 return status == .available
             } catch {
-                lastDiagnostic = "Kon iCloud-accountstatus niet opvragen: \(error.localizedDescription)"
+                lastDiagnostic = "Kon iCloud-accountstatus niet opvragen: \(diagnosticText(for: error))"
                 return false
             }
         }
@@ -96,7 +115,7 @@ final class CloudSyncCenter {
         } catch {
             // Geen verbinding, of iCloud (tijdelijk) niet bereikbaar: lokale
             // data blijft leidend, precies zoals voorheen bij Supabase.
-            lastDiagnostic = "Ophalen uit iCloud mislukt: \(error.localizedDescription)"
+            lastDiagnostic = "Ophalen uit iCloud mislukt: \(diagnosticText(for: error))"
             return []
         }
 
@@ -114,13 +133,13 @@ final class CloudSyncCenter {
             let result = try await database.modifyRecords(saving: records, deleting: [], savePolicy: .changedKeys)
             for (_, saveResult) in result.saveResults {
                 if case .failure(let error) = saveResult {
-                    lastDiagnostic = "Opslaan naar iCloud mislukt: \(error.localizedDescription)"
+                    lastDiagnostic = "Opslaan naar iCloud mislukt: \(diagnosticText(for: error))"
                     return false
                 }
             }
             return true
         } catch {
-            lastDiagnostic = "Opslaan naar iCloud mislukt: \(error.localizedDescription)"
+            lastDiagnostic = "Opslaan naar iCloud mislukt: \(diagnosticText(for: error))"
             return false
         }
     }
@@ -136,13 +155,13 @@ final class CloudSyncCenter {
             let result = try await database.modifyRecords(saving: [], deleting: recordIDs)
             for (_, deleteResult) in result.deleteResults {
                 if case .failure(let error) = deleteResult {
-                    lastDiagnostic = "Verwijderen uit iCloud mislukt: \(error.localizedDescription)"
+                    lastDiagnostic = "Verwijderen uit iCloud mislukt: \(diagnosticText(for: error))"
                     return false
                 }
             }
             return true
         } catch {
-            lastDiagnostic = "Verwijderen uit iCloud mislukt: \(error.localizedDescription)"
+            lastDiagnostic = "Verwijderen uit iCloud mislukt: \(diagnosticText(for: error))"
             return false
         }
     }
@@ -161,7 +180,7 @@ final class CloudSyncCenter {
             didEnsureZone = true
             return true
         } catch {
-            lastDiagnostic = "Aanmaken van iCloud-zone mislukt: \(error.localizedDescription)"
+            lastDiagnostic = "Aanmaken van iCloud-zone mislukt: \(diagnosticText(for: error))"
             return false
         }
     }
