@@ -25,7 +25,18 @@ import CloudKit
 final class CloudSyncCenter {
     static let shared = CloudSyncCenter()
 
-    private let container = CKContainer.default()
+    /// Expliciet bij naam opgevraagd (in plaats van `CKContainer.default()`).
+    /// Reden: `.default()` leidt de containernaam soms af uit het eigen
+    /// bundle-ID van de app ("iCloud." + bundle-ID) in plaats van de
+    /// container te gebruiken die in de entitlements staat, zodra die naam
+    /// niet toevallig gelijk is aan dat patroon. Bij de macOS-app
+    /// ("nl.tintking.calculator") komt dat toevallig overeen met onze
+    /// containernaam, maar bij de mobiele app ("nl.tintking.calculator.mobile")
+    /// niet — daar probeerde `.default()` dan de niet-bestaande container
+    /// "iCloud.nl.tintking.calculator.mobile" te gebruiken. Door de naam hier
+    /// hard te noemen, gebruiken beide apps altijd gegarandeerd dezelfde,
+    /// echt bestaande container.
+    private let container = CKContainer(identifier: "iCloud.nl.tintking.calculator")
     private lazy var database = container.privateCloudDatabase
 
     /// Puur nog een "koffertje"-waarde: dezelfde zone-ID die elke store
