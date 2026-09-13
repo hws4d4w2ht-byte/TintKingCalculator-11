@@ -71,6 +71,7 @@ final class QuoteArchiveStore: ObservableObject {
     @Published private(set) var items: [ArchivedQuote] = []
     @Published private(set) var isSyncing = false
     @Published private(set) var lastSyncedAt: Date?
+    @Published private(set) var lastError: String?
 
     private let storageKey = "TintKing.QuoteArchive.Items.v1"
     private let syncedIDsKey = "TintKing.Sync.SyncedQuoteArchiveIDs"
@@ -101,6 +102,10 @@ final class QuoteArchiveStore: ObservableObject {
         persistLocally()
         addPendingDeletion(id)
         Task { await flushPendingDeletions() }
+    }
+
+    func clearError() {
+        lastError = nil
     }
 
     // MARK: - Lokale opslag
@@ -145,8 +150,9 @@ final class QuoteArchiveStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: ArchivedQuote.recordType)
-        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+        if let diagnostic = CloudSyncCenter.shared.lastDiagnostic {
             // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            lastError = diagnostic
             return
         }
         let remoteItems = remoteRecords.compactMap(ArchivedQuote.init(record:))
@@ -208,6 +214,8 @@ final class QuoteArchiveStore: ObservableObject {
             var synced = syncedIDs
             synced.insert(item.id)
             syncedIDs = synced
+        } else if let diagnostic = CloudSyncCenter.shared.lastDiagnostic {
+            lastError = diagnostic
         }
     }
 

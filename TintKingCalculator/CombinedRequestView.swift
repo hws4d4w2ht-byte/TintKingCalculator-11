@@ -623,5 +623,15 @@ struct CombinedRequestView: View {
         } message: {
             Text(moneybirdResultMessage ?? "")
         }
+        .alert("Opslagfout (archief)", isPresented: Binding(
+            get: { quoteArchiveStore.lastError != nil },
+            set: { isPresented in
+                if !isPresented { quoteArchiveStore.clearError() }
+            }
+        )) {
+            Button("OK", role: .cancel) { quoteArchiveStore.clearError() }
+        } message: {
+            Text(quoteArchiveStore.lastError ?? "Onbekende fout")
+        }
     }
 }
