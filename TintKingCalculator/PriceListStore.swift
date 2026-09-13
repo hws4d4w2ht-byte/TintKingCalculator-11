@@ -269,6 +269,13 @@ final class PriceListStore: ObservableObject {
         defer { isSyncing = false }
 
         let records = await CloudSyncCenter.shared.fetchAllRecords(recordType: Self.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet aannemen dat de cloud leeg is — anders zou een
+            // tijdelijke fout de cloudversie kunnen overschrijven met verouderde
+            // lokale data. Probeer het later opnieuw.
+            lastError = CloudSyncCenter.shared.lastDiagnostic
+            return
+        }
         if let remoteData = records.first(where: { $0.recordID.recordName == Self.recordName }).flatMap(PriceListData.init(record:)) {
             let remoteModified = remoteData.modifiedAt ?? .distantPast
             let localModified = data.modifiedAt ?? .distantPast

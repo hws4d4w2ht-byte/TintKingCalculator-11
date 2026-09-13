@@ -280,8 +280,13 @@ final class DechromeCalculationStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: SavedDechromeCalculation.recordType)
-        if remoteRecords.isEmpty, let diagnostic = CloudSyncCenter.shared.lastDiagnostic {
+        if let diagnostic = CloudSyncCenter.shared.lastDiagnostic {
+            // Ophalen is mislukt: NIET doorgaan met vergelijken/verwijderen —
+            // anders kan lokale data die nog niet bevestigd kon worden onterecht
+            // als "verwijderd in de cloud" worden aangemerkt. Lokale data blijft
+            // intact; de volgende synchronisatie probeert het opnieuw.
             lastError = diagnostic
+            return
         }
         let remoteCalculations = remoteRecords.compactMap(SavedDechromeCalculation.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteCalculations.map { ($0.id, $0) })

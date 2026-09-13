@@ -123,6 +123,10 @@ final class KozijnProjectStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: KozijnProject.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remoteProjects = remoteRecords.compactMap(KozijnProject.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteProjects.map { ($0.id, $0) })
 

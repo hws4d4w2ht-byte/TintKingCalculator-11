@@ -144,6 +144,11 @@ final class ProjectStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: SavedProject.recordType)
+        if let diagnostic = CloudSyncCenter.shared.lastDiagnostic {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            lastError = diagnostic
+            return
+        }
         let remoteProjects = remoteRecords.compactMap(SavedProject.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteProjects.map { ($0.id, $0) })
 

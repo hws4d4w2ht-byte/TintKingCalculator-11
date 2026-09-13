@@ -105,6 +105,10 @@ final class DechromePresetStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: DechromePreset.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remotePresets = remoteRecords.compactMap(DechromePreset.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remotePresets.map { ($0.id, $0) })
 

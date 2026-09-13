@@ -529,6 +529,10 @@ final class ProductStore: ObservableObject {
 
     private func syncProducts() async {
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: ProductItem.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remoteProducts = remoteRecords.compactMap(ProductItem.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteProducts.map { ($0.id, $0) })
 
@@ -579,6 +583,10 @@ final class ProductStore: ObservableObject {
 
     private func syncSharedVariantGroups() async {
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: SharedVariantGroup.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remoteGroups = remoteRecords.compactMap(SharedVariantGroup.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteGroups.map { ($0.id, $0) })
 

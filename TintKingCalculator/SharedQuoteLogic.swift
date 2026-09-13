@@ -506,6 +506,10 @@ final class RequestStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: RequestLine.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remoteLines = remoteRecords.compactMap(RequestLine.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteLines.map { ($0.id, $0) })
 

@@ -180,6 +180,10 @@ final class OrderListStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: OrderListItem.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remoteItems = remoteRecords.compactMap(OrderListItem.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteItems.map { ($0.id, $0) })
 

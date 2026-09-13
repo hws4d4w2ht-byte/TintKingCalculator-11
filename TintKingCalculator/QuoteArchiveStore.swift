@@ -145,6 +145,10 @@ final class QuoteArchiveStore: ObservableObject {
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: ArchivedQuote.recordType)
+        guard CloudSyncCenter.shared.lastDiagnostic == nil else {
+            // Ophalen mislukt: niet vergelijken/verwijderen, lokale data blijft staan.
+            return
+        }
         let remoteItems = remoteRecords.compactMap(ArchivedQuote.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteItems.map { ($0.id, $0) })
 
