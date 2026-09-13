@@ -270,13 +270,19 @@ final class DechromeCalculationStore: ObservableObject {
     /// Haalt de laatste stand uit iCloud op. Kan gerust vaak worden aangeroepen
     /// (bijv. bij het openen van dit scherm, of via een 'Synchroniseer nu'-knop).
     func syncWithCloud() async {
-        guard await CloudSyncCenter.shared.isAccountAvailable else { return }
+        guard await CloudSyncCenter.shared.isAccountAvailable else {
+            lastError = CloudSyncCenter.shared.lastDiagnostic ?? "iCloud is nu niet beschikbaar."
+            return
+        }
         isSyncing = true
         defer { isSyncing = false }
 
         await flushPendingDeletions()
 
         let remoteRecords = await CloudSyncCenter.shared.fetchAllRecords(recordType: SavedDechromeCalculation.recordType)
+        if remoteRecords.isEmpty, let diagnostic = CloudSyncCenter.shared.lastDiagnostic {
+            lastError = diagnostic
+        }
         let remoteCalculations = remoteRecords.compactMap(SavedDechromeCalculation.init(record:))
         let remoteByID = Dictionary(uniqueKeysWithValues: remoteCalculations.map { ($0.id, $0) })
 
@@ -334,6 +340,8 @@ final class DechromeCalculationStore: ObservableObject {
             var synced = syncedIDs
             synced.insert(calc.id)
             syncedIDs = synced
+        } else {
+            lastError = CloudSyncCenter.shared.lastDiagnostic ?? "Opslaan naar iCloud is niet gelukt."
         }
     }
 

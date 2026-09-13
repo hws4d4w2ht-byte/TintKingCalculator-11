@@ -38,18 +38,33 @@ final class CloudSyncCenter {
     /// per appstart hoeven te proberen in plaats van voor elke aanroep.
     private var didEnsureZone = false
 
+    /// Laatste fout- of statusmelding van een CloudKit-aanroep, in gewone
+    /// taal — puur voor diagnose (bijv. getoond in een foutmelding in de
+    /// app). Wordt overschreven bij elke nieuwe aanroep.
+    private(set) var lastDiagnostic: String?
+
     private init() {}
 
     /// Of iCloud op dit moment bruikbaar is (ingelogd op dit apparaat, geen
     /// beperkingen zoals Schermtijd/ouderlijk toezicht, etc.).
     var isAccountAvailable: Bool {
         get async {
-            (try? await container.accountStatus()) == .available
+            do {
+                let status = try await container.accountStatus()
+                if status != .available {
+                    lastDiagnostic = "iCloud-account niet beschikbaar (status: \(status.rawValue))"
+                }
+                return status == .available
+            } catch {
+                lastDiagnostic = "Kon iCloud-accountstatus niet opvragen: \(error.localizedDescription)"
+                return false
+            }
         }
     }
 
     /// Haalt alle records van een bepaald recordtype op uit de eigen zone.
     func fetchAllRecords(recordType: String) async -> [CKRecord] {
+        lastDiagnostic = nil
         guard await isAccountAvailable else { return [] }
         guard await ensureZoneExists() else { return [] }
 
@@ -70,6 +85,7 @@ final class CloudSyncCenter {
         } catch {
             // Geen verbinding, of iCloud (tijdelijk) niet bereikbaar: lokale
             // data blijft leidend, precies zoals voorheen bij Supabase.
+            lastDiagnostic = "Ophalen uit iCloud mislukt: \(error.localizedDescription)"
             return []
         }
 
@@ -86,12 +102,14 @@ final class CloudSyncCenter {
         do {
             let result = try await database.modifyRecords(saving: records, deleting: [], savePolicy: .changedKeys)
             for (_, saveResult) in result.saveResults {
-                if case .failure = saveResult {
+                if case .failure(let error) = saveResult {
+                    lastDiagnostic = "Opslaan naar iCloud mislukt: \(error.localizedDescription)"
                     return false
                 }
             }
             return true
         } catch {
+            lastDiagnostic = "Opslaan naar iCloud mislukt: \(error.localizedDescription)"
             return false
         }
     }
@@ -106,12 +124,14 @@ final class CloudSyncCenter {
         do {
             let result = try await database.modifyRecords(saving: [], deleting: recordIDs)
             for (_, deleteResult) in result.deleteResults {
-                if case .failure = deleteResult {
+                if case .failure(let error) = deleteResult {
+                    lastDiagnostic = "Verwijderen uit iCloud mislukt: \(error.localizedDescription)"
                     return false
                 }
             }
             return true
         } catch {
+            lastDiagnostic = "Verwijderen uit iCloud mislukt: \(error.localizedDescription)"
             return false
         }
     }
@@ -130,6 +150,7 @@ final class CloudSyncCenter {
             didEnsureZone = true
             return true
         } catch {
+            lastDiagnostic = "Aanmaken van iCloud-zone mislukt: \(error.localizedDescription)"
             return false
         }
     }
