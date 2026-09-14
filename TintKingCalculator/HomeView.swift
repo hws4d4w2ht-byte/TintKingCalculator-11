@@ -130,10 +130,6 @@ struct HomeView: View {
                 }
             }
 
-            Section("Snel naar") {
-                quickLinksRow
-            }
-
             Section {
                 remindersRows
             } header: {
