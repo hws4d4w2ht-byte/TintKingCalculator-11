@@ -6,15 +6,14 @@ import AppKit
 import UIKit
 #endif
 
-/// Landingsscherm: laat de laatste handelingen in de app zien (nieuwe klant,
-/// notitie of foto toegevoegd, offerte/factuur verstuurd, Moneybird-koppeling),
-/// snelkoppelingen naar elk tabblad, openstaande herinneringen uit Apple
-/// Herinneringen en te laat betaalde Moneybird-facturen. Gedeeld tussen Mac
-/// en mobiel: op de Mac (breed scherm) een overzicht in vakken met een
-/// rechterkolom voor de kleinere kaartjes, op mobiel de vertrouwde lijst
-/// onder elkaar. Tikken op een activiteit springt naar het bijbehorende
-/// tabblad — bij een klant-gerelateerde activiteit meteen naar die klant in
-/// Klanten.
+/// Landingsscherm: laat zien wat er vandaag toe doet — de agenda van
+/// vandaag, openstaande herinneringen uit Apple Herinneringen en te laat
+/// betaalde Moneybird-facturen — met de laatste app-activiteit bewust klein
+/// onderaan (geheugensteuntje, geen hoofdmoot). Gedeeld tussen Mac en
+/// mobiel: op de Mac (breed scherm) drie even brede kaarten naast elkaar,
+/// op mobiel de vertrouwde lijst onder elkaar. Tikken op een activiteit
+/// springt naar het bijbehorende tabblad — bij een klant-gerelateerde
+/// activiteit meteen naar die klant in Klanten.
 struct HomeView: View {
     @ObservedObject var activityLog: ActivityLogStore
     @Binding var selectedTab: AppTab
@@ -23,10 +22,6 @@ struct HomeView: View {
     @ObservedObject var calendarStore: CalendarStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var overdueInvoicesStore: OverdueInvoicesStore
-
-    private let quickLinks: [AppTab] = [
-        .aanvraag, .montage, .tint, .dechrome, .snijfolie, .roll, .meten, .producten, .prijslijst, .klanten, .kozijn,
-    ]
 
     private var relativeFormatter: RelativeDateTimeFormatter {
         let formatter = RelativeDateTimeFormatter()
@@ -60,55 +55,57 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Mac: overzicht in vakken (kaarten), gebruikmakend van de brede
-    // schermbreedte — links het belangrijkste (snelkoppelingen + activiteit),
-    // rechts een smallere kolom met de kleinere kaartjes.
+    // MARK: - Mac: drie even brede kaarten naast elkaar (agenda,
+    // herinneringen, te laat betaalde facturen) — het belangrijkste van de
+    // dag in één oogopslag, met de tabbladen al bereikbaar via de menubalk
+    // erboven. Laatste activiteit staat bewust klein en apart onderaan.
 
     #if os(macOS)
     private var macDashboard: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                HomeCard(title: "Snel naar") {
-                    quickLinksRow
-                }
-
+            VStack(alignment: .leading, spacing: 28) {
                 HStack(alignment: .top, spacing: 20) {
-                    HomeCard(title: "Laatste activiteit") {
-                        activityRows
+                    HomeCard(title: "Agenda vandaag") {
+                        agendaRows
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(spacing: 20) {
-                        HomeCard(title: "Agenda vandaag") {
-                            agendaRows
-                        }
-
-                        if !overdueInvoicesStore.invoices.isEmpty {
-                            HomeCard(
-                                title: "Te laat betaalde facturen",
-                                titleColor: .red,
-                                trailing: {
-                                    Text(overdueInvoicesStore.totalOverdueAmount, format: currency)
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                }
-                            ) {
-                                overdueInvoicesRows
+                    HomeCard(
+                        title: "Herinneringen",
+                        trailing: {
+                            if reminderStore.isLoading {
+                                ProgressView().controlSize(.small)
                             }
                         }
+                    ) {
+                        remindersRows
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
+                    if !overdueInvoicesStore.invoices.isEmpty {
                         HomeCard(
-                            title: "Herinneringen",
+                            title: "Te laat betaalde facturen",
+                            titleColor: .red,
                             trailing: {
-                                if reminderStore.isLoading {
-                                    ProgressView().controlSize(.small)
-                                }
+                                Text(overdueInvoicesStore.totalOverdueAmount, format: currency)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
                             }
                         ) {
-                            remindersRows
+                            overdueInvoicesRows
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(width: 340)
+                }
+
+                // Bewust klein en onopvallend gehouden — dit is een
+                // geheugensteuntje, geen kaartje dat om aandacht vraagt zoals
+                // de agenda/herinneringen/facturen hierboven.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Laatste activiteit")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    activityRowsCompact
                 }
             }
             .padding(24)
@@ -163,31 +160,6 @@ struct HomeView: View {
     // MARK: - Gedeelde inhoud (los van de lay-out eromheen), zodat Mac en
     // mobiel precies dezelfde gegevens en tik-logica gebruiken.
 
-    private var quickLinksRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(quickLinks, id: \.self) { tab in
-                    Button {
-                        selectedTab = tab
-                    } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: tab.systemImage)
-                                .font(.title2)
-                            Text(tab.title)
-                                .font(.caption)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
-                        }
-                        .frame(width: 84, height: 72)
-                        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
     /// Rijen voor het facturen-kaartje — bewust maar een handvol tonen
     /// (de rest achter "+ N meer"), ook al is de lijst na het filter op
     /// maximaal een jaar oud meestal al kort.
@@ -202,15 +174,17 @@ struct HomeView: View {
                 openInMoneybird(invoice)
             } label: {
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(invoice.contactName)
+                            .font(.body)
                             .foregroundStyle(.primary)
                         Text("\(invoice.daysOverdue) \(invoice.daysOverdue == 1 ? "dag" : "dagen") te laat")
-                            .font(.caption)
+                            .font(.subheadline)
                             .foregroundStyle(.red)
                     }
                     Spacer()
                     Text(invoice.totalPriceIncl, format: currency)
+                        .font(.body)
                         .foregroundStyle(.secondary)
                     Image(systemName: "arrow.up.right.square")
                         .foregroundStyle(invoice.viewURL == nil ? Color.secondary.opacity(0.3) : Color.accentColor)
@@ -244,11 +218,12 @@ struct HomeView: View {
                         }
                         .buttonStyle(.borderless)
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(item.title)
+                                .font(.body)
                             if let dueDate = item.dueDate {
                                 Text(dueDate, format: .dateTime.day().month().hour().minute())
-                                    .font(.caption)
+                                    .font(.subheadline)
                                     .foregroundStyle(item.isOverdue ? Color.red : Color.secondary)
                             }
                         }
@@ -280,22 +255,23 @@ struct HomeView: View {
             } else {
                 ForEach(calendarStore.items) { item in
                     HStack(alignment: .top, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(item.title)
+                                .font(.body)
                             if let location = item.location, !location.isEmpty {
                                 Text(location)
-                                    .font(.caption)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
                         }
                         Spacer()
                         if item.isAllDay {
                             Text("Hele dag")
-                                .font(.caption)
+                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         } else {
                             Text(item.startDate, format: .dateTime.hour().minute())
-                                .font(.caption)
+                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -348,6 +324,47 @@ struct HomeView: View {
             }
         }
     }
+
+    #if os(macOS)
+    /// Kleine, ingetogen versie van `activityRows` voor onderaan het
+    /// Mac-dashboard — bewust maar een handvol regels, kleine tekst, geen
+    /// kaartje eromheen, zodat het niet met de belangrijkere kaarten
+    /// erboven concurreert.
+    @ViewBuilder
+    private var activityRowsCompact: some View {
+        if activityLog.entries.isEmpty {
+            Text("Nog geen activiteit.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            ForEach(activityLog.entries.prefix(4)) { entry in
+                Button {
+                    if let customerID = entry.customerID {
+                        selectedCustomerID = customerID
+                    }
+                    if let tab = entry.tab {
+                        selectedTab = tab
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: entry.systemImage)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 14)
+                        Text(entry.text)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Text("·")
+                            .foregroundStyle(.secondary)
+                        Text(relativeFormatter.localizedString(for: entry.date, relativeTo: Date()))
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+    #endif
 
     private func openInMoneybird(_ invoice: MoneybirdOverdueInvoice) {
         guard let url = invoice.viewURL else { return }
@@ -410,22 +427,22 @@ private struct HomeCard<Trailing: View, Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text(title)
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(titleColor)
                 Spacer()
                 trailing()
             }
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 content()
             }
         }
-        .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(20)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.primary.opacity(0.08), lineWidth: 1)
         )
     }
