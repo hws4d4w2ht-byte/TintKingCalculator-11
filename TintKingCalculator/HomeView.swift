@@ -20,6 +20,7 @@ struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var selectedCustomerID: UUID?
     @ObservedObject var reminderStore: ReminderStore
+    @ObservedObject var calendarStore: CalendarStore
     @ObservedObject var moneybirdSettings: MoneybirdSettingsStore
     @ObservedObject var overdueInvoicesStore: OverdueInvoicesStore
 
@@ -52,6 +53,7 @@ struct HomeView: View {
         #endif
         .onAppear {
             reminderStore.start()
+            calendarStore.start()
         }
         .task {
             await overdueInvoicesStore.refresh(settings: moneybirdSettings)
@@ -77,6 +79,10 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(spacing: 20) {
+                        HomeCard(title: "Agenda vandaag") {
+                            agendaRows
+                        }
+
                         if !overdueInvoicesStore.invoices.isEmpty {
                             HomeCard(
                                 title: "Te laat betaalde facturen",
@@ -128,6 +134,10 @@ struct HomeView: View {
                             .font(.caption.weight(.semibold))
                     }
                 }
+            }
+
+            Section("Agenda vandaag") {
+                agendaRows
             }
 
             Section {
@@ -261,6 +271,52 @@ struct HomeView: View {
     }
 
     @ViewBuilder
+    private var agendaRows: some View {
+        switch calendarStore.authorizationStatus {
+        case .fullAccess:
+            if calendarStore.items.isEmpty {
+                Text("Geen afspraken vandaag.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(calendarStore.items) { item in
+                    HStack(alignment: .top, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                            if let location = item.location, !location.isEmpty {
+                                Text(location)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        if item.isAllDay {
+                            Text("Hele dag")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(item.startDate, format: .dateTime.hour().minute())
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        case .notDetermined:
+            Button("Toegang tot Agenda geven") {
+                calendarStore.requestAccess()
+            }
+        default:
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Geen toegang tot Agenda.")
+                    .foregroundStyle(.secondary)
+                Button("Open instellingen") {
+                    openCalendarSettings()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var activityRows: some View {
         if activityLog.entries.isEmpty {
             Text("Nog geen activiteit. Zodra je een klant toevoegt of een offerte verstuurt, zie je dat hier terug.")
@@ -305,6 +361,18 @@ struct HomeView: View {
     private func openReminderSettings() {
         #if os(macOS)
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders") {
+            NSWorkspace.shared.open(url)
+        }
+        #else
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+        #endif
+    }
+
+    private func openCalendarSettings() {
+        #if os(macOS)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
             NSWorkspace.shared.open(url)
         }
         #else

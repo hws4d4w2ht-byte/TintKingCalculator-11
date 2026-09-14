@@ -251,6 +251,7 @@ struct MobileContentView: View {
     @StateObject private var projectStore = ProjectStore()
     @StateObject private var quoteArchiveStore = QuoteArchiveStore()
     @StateObject private var reminderStore = ReminderStore()
+    @StateObject private var calendarStore = CalendarStore()
     @StateObject private var overdueInvoicesStore = OverdueInvoicesStore()
     @ObservedObject private var activityLog = ActivityLogStore.shared
     @State private var selectedTab: AppTab = .home
@@ -280,7 +281,7 @@ struct MobileContentView: View {
         switch tab {
         case .home:
             NavigationStack {
-                HomeView(activityLog: activityLog, selectedTab: $selectedTab, selectedCustomerID: $selectedCustomerID, reminderStore: reminderStore, moneybirdSettings: moneybirdSettings, overdueInvoicesStore: overdueInvoicesStore)
+                HomeView(activityLog: activityLog, selectedTab: $selectedTab, selectedCustomerID: $selectedCustomerID, reminderStore: reminderStore, calendarStore: calendarStore, moneybirdSettings: moneybirdSettings, overdueInvoicesStore: overdueInvoicesStore)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             NavigationLink {

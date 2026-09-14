@@ -37,6 +37,7 @@
 		A34 /* KeyboardDismissModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35 /* KeyboardDismissModifier.swift */; };
 		A35 /* QuoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36 /* QuoteArchiveStore.swift */; };
 		A36 /* OverdueInvoicesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37 /* OverdueInvoicesStore.swift */; };
+		A37 /* CalendarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38 /* CalendarStore.swift */; };
 		A4 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
 		A5 /* PriceListStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6 /* PriceListStore.swift */; };
 		A6 /* PriceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7 /* PriceListView.swift */; };
@@ -82,6 +83,7 @@
 		AI40 /* KeyboardDismissModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35 /* KeyboardDismissModifier.swift */; };
 		AI41 /* QuoteArchiveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36 /* QuoteArchiveStore.swift */; };
 		AI42 /* OverdueInvoicesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B37 /* OverdueInvoicesStore.swift */; };
+		AI43 /* CalendarStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38 /* CalendarStore.swift */; };
 		AI5 /* MobileRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BI5 /* MobileRequestView.swift */; };
 		AI6 /* CalculatorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3 /* CalculatorModel.swift */; };
 		AI7 /* ProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5 /* ProjectStore.swift */; };
@@ -127,6 +129,7 @@
 		B35 /* KeyboardDismissModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardDismissModifier.swift; sourceTree = "<group>"; };
 		B36 /* QuoteArchiveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteArchiveStore.swift; sourceTree = "<group>"; };
 		B37 /* OverdueInvoicesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverdueInvoicesStore.swift; sourceTree = "<group>"; };
+		B38 /* CalendarStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarStore.swift; sourceTree = "<group>"; };
 		B4 /* TintKingCalculator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TintKingCalculator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5 /* ProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectStore.swift; sourceTree = "<group>"; };
 		B6 /* PriceListStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceListStore.swift; sourceTree = "<group>"; };
@@ -220,6 +223,7 @@
 				B35 /* KeyboardDismissModifier.swift */,
 				B36 /* QuoteArchiveStore.swift */,
 				B37 /* OverdueInvoicesStore.swift */,
+				B38 /* CalendarStore.swift */,
 				B9 /* CloudSync.swift */,
 				B10 /* DechromePresetStore.swift */,
 				BA1 /* Assets.xcassets */,
@@ -402,6 +406,7 @@
 				A34 /* KeyboardDismissModifier.swift in Sources */,
 				A35 /* QuoteArchiveStore.swift in Sources */,
 				A36 /* OverdueInvoicesStore.swift in Sources */,
+				A37 /* CalendarStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -451,6 +456,7 @@
 				AI40 /* KeyboardDismissModifier.swift in Sources */,
 				AI41 /* QuoteArchiveStore.swift in Sources */,
 				AI42 /* OverdueInvoicesStore.swift in Sources */,
+				AI43 /* CalendarStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -502,6 +508,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Calculator";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "TintKing gebruikt je Agenda om de afspraken van vandaag op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -528,6 +535,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Calculator";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "TintKing gebruikt je Agenda om de afspraken van vandaag op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -554,6 +562,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Mobiel";
 				INFOPLIST_KEY_NSCameraUsageDescription = "TintKing gebruikt de camera om foto's te maken voor het meten-tabblad.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "TintKing gebruikt je Agenda om de afspraken van vandaag op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -588,6 +597,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "TintKing Mobiel";
 				INFOPLIST_KEY_NSCameraUsageDescription = "TintKing gebruikt de camera om foto's te maken voor het meten-tabblad.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "TintKing gebruikt je Agenda om de afspraken van vandaag op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_NSRemindersUsageDescription = "TintKing gebruikt Herinneringen om je openstaande taken op het Home-tabblad te tonen.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
