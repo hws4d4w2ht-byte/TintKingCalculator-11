@@ -6,8 +6,8 @@ import AppKit
 import UIKit
 #endif
 
-/// Landingsscherm: laat zien wat er vandaag toe doet — de agenda van
-/// vandaag, openstaande herinneringen uit Apple Herinneringen en te laat
+/// Landingsscherm: laat zien wat er toe doet — de agenda van de komende
+/// dagen, openstaande herinneringen uit Apple Herinneringen en te laat
 /// betaalde Moneybird-facturen — met de laatste app-activiteit bewust klein
 /// onderaan (geheugensteuntje, geen hoofdmoot). Gedeeld tussen Mac en
 /// mobiel: op de Mac (breed scherm) drie even brede kaarten naast elkaar,
@@ -65,7 +65,7 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 HStack(alignment: .top, spacing: 20) {
-                    HomeCard(title: "Agenda vandaag") {
+                    HomeCard(title: "Agenda") {
                         agendaRows
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,7 +133,7 @@ struct HomeView: View {
                 }
             }
 
-            Section("Agenda vandaag") {
+            Section("Agenda") {
                 agendaRows
             }
 
@@ -245,34 +245,70 @@ struct HomeView: View {
         }
     }
 
+    /// Eén dag met de afspraken daarbinnen, voor het gegroepeerd tonen van
+    /// de agenda van de komende dagen (in plaats van alles op één hoop).
+    private struct AgendaDayGroup: Identifiable {
+        let day: Date
+        let items: [CalendarEventItem]
+        var id: Date { day }
+    }
+
+    private var agendaDayGroups: [AgendaDayGroup] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: calendarStore.items) { calendar.startOfDay(for: $0.startDate) }
+        return grouped.keys.sorted().map { day in
+            AgendaDayGroup(day: day, items: (grouped[day] ?? []).sorted { $0.startDate < $1.startDate })
+        }
+    }
+
+    /// "Vandaag"/"Morgen" waar dat kan, anders de weekdag + datum — leesbaarder
+    /// dan steeds een kale datum bij elke dag-kop.
+    private func agendaDayLabel(_ day: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return "Vandaag" }
+        if calendar.isDateInTomorrow(day) { return "Morgen" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.setLocalizedDateFormatFromTemplate("EEEE d MMMM")
+        return formatter.string(from: day).capitalized
+    }
+
     @ViewBuilder
     private var agendaRows: some View {
         switch calendarStore.authorizationStatus {
         case .fullAccess:
             if calendarStore.items.isEmpty {
-                Text("Geen afspraken vandaag.")
+                Text("Geen afspraken de komende dagen.")
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(calendarStore.items) { item in
-                    HStack(alignment: .top, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.title)
-                                .font(.body)
-                            if let location = item.location, !location.isEmpty {
-                                Text(location)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                ForEach(agendaDayGroups) { group in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(agendaDayLabel(group.day))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        ForEach(group.items) { item in
+                            HStack(alignment: .top, spacing: 10) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(item.title)
+                                        .font(.body)
+                                    if let location = item.location, !location.isEmpty {
+                                        Text(location)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                Spacer()
+                                if item.isAllDay {
+                                    Text("Hele dag")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text(item.startDate, format: .dateTime.hour().minute())
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
-                        }
-                        Spacer()
-                        if item.isAllDay {
-                            Text("Hele dag")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text(item.startDate, format: .dateTime.hour().minute())
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
                         }
                     }
                 }

@@ -13,10 +13,11 @@ struct CalendarEventItem: Identifiable {
     let location: String?
 }
 
-/// Haalt de afspraken van vandaag op uit de Agenda-app (via EventKit) voor
-/// de "Agenda"-sectie op het Home-tabblad. Nieuwe afspraken maak je nog in
-/// de Agenda-app zelf — dit is puur een overzicht, zodat je in één oogopslag
-/// ziet wat er vandaag op de planning staat naast de rest van Home.
+/// Haalt de afspraken van de komende 5 dagen (inclusief vandaag) op uit de
+/// Agenda-app (via EventKit) voor de "Agenda"-sectie op het Home-tabblad.
+/// Nieuwe afspraken maak je nog in de Agenda-app zelf — dit is puur een
+/// overzicht, zodat je in één oogopslag ziet wat er de komende dagen op de
+/// planning staat naast de rest van Home.
 @MainActor
 final class CalendarStore: ObservableObject {
     @Published private(set) var items: [CalendarEventItem] = []
@@ -24,8 +25,8 @@ final class CalendarStore: ObservableObject {
 
     private let store = EKEventStore()
 
-    /// Vraagt zo nodig toegang en haalt daarna de afspraken van vandaag op.
-    /// Wordt aangeroepen zodra het Home-tabblad verschijnt.
+    /// Vraagt zo nodig toegang en haalt daarna de afspraken van de komende
+    /// dagen op. Wordt aangeroepen zodra het Home-tabblad verschijnt.
     func start() {
         authorizationStatus = EKEventStore.authorizationStatus(for: .event)
         switch authorizationStatus {
@@ -50,12 +51,16 @@ final class CalendarStore: ObservableObject {
         }
     }
 
+    /// Aantal dagen dat getoond wordt, vandaag meegeteld (dus 5 = vandaag
+    /// t/m over 4 dagen).
+    private let daysAhead = 5
+
     func refresh() {
         guard authorizationStatus == .fullAccess else { return }
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return }
-        let predicate = store.predicateForEvents(withStart: startOfDay, end: endOfDay, calendars: nil)
+        guard let endDate = calendar.date(byAdding: .day, value: daysAhead, to: startOfDay) else { return }
+        let predicate = store.predicateForEvents(withStart: startOfDay, end: endDate, calendars: nil)
         let events = store.events(matching: predicate)
         items = events
             .map { event in
